@@ -35,6 +35,7 @@ MARKET_STRUCTURE = {
 class CryptoAnalyzer:
     def __init__(self):
         self.fetcher = DataFetcher()
+        self.debug_mode = False  # Desabilitado para evitar problemas Unicode no Windows
     
     def analyze(self, token_query):
         token_id = self.fetcher.search_token(token_query)
@@ -96,7 +97,14 @@ class CryptoAnalyzer:
             'price_change_7d': token_data['price_change_7d'],
             'price_change_30d': token_data['price_change_30d'],
             'momentum_analysis': momentum_analysis,
-            'data': token_data
+            'data': token_data,
+            # Campos adicionais para DisplayManager
+            'decision': decision['final_decision'],
+            'analysis': {
+                'strengths': decision['strengths'],
+                'weaknesses': decision['weaknesses'],
+                'risks': []  # Para compatibilidade com save_report
+            }
         }
     
     def check_elimination(self, data):
@@ -129,27 +137,28 @@ class CryptoAnalyzer:
         market_cap_rank = data.get('market_cap_rank', 9999)
         volume = data.get('volume', 0)
         
-        print(f"\nDEBUG SCORING - {symbol}")
-        print(f"   Market Cap: ${market_cap:,.0f}")
-        print(f"   Rank: #{market_cap_rank}")
-        print(f"   Volume 24h: ${volume:,.0f}")
+        # Comentado temporariamente para evitar problemas Unicode no Windows
+        # print(f"\nDEBUG SCORING - {symbol}")
+        # print(f"   Market Cap: ${market_cap:,.0f}")
+        # print(f"   Rank: #{market_cap_rank}")
+        # print(f"   Volume 24h: ${volume:,.0f}")
         
         # 1. MARKET CAP SCORING (0-2 pontos) - Peso fundamental
         if market_cap >= 100_000_000_000:  # >= $100B (Bitcoin, Ethereum)
             breakdown['market_cap'] = 2
             score += 2
-            print(f"   ✅ Market Cap: 2/2 pontos (>= $100B)")
+            # print(f"   OK Market Cap: 2/2 pontos (>= $100B)")
         elif market_cap >= 10_000_000_000:  # >= $10B (Top ~20)
             breakdown['market_cap'] = 2
             score += 2
-            print(f"   ✅ Market Cap: 2/2 pontos (>= $10B)")
+            if self.debug_mode: print(f"   OK Market Cap: 2/2 pontos (>= $10B)")
         elif market_cap >= 1_000_000_000:  # >= $1B (Top ~100)
             breakdown['market_cap'] = 1
             score += 1
-            print(f"   ⭐ Market Cap: 1/2 pontos (>= $1B)")
+            if self.debug_mode: print(f"   OK Market Cap: 1/2 pontos (>= $1B)")
         else:
             breakdown['market_cap'] = 0
-            print(f"   Market Cap: 0/2 pontos (< $1B)")
+            if self.debug_mode: print(f"   Market Cap: 0/2 pontos (< $1B)")
         
         # 2. LIQUIDEZ (0-2 pontos) - Baseado em volume e ranking
         if market_cap > 0:
@@ -157,17 +166,17 @@ class CryptoAnalyzer:
             if market_cap_rank <= 50 and volume > 1_000_000_000:  # Top 50 + >$1B volume
                 breakdown['liquidity'] = 2
                 score += 2
-                print(f"   ✅ Liquidez: 2/2 pontos (Top 50 + alto volume)")
+                if self.debug_mode: print(f"   OK Liquidez: 2/2 pontos (Top 50 + alto volume)")
             elif volume_ratio > 0.02 or volume > 500_000_000:  # >2% ratio OU >$500M volume
                 breakdown['liquidity'] = 1
                 score += 1
-                print(f"   ⭐ Liquidez: 1/2 pontos (boa liquidez)")
+                if self.debug_mode: print(f"   OK Liquidez: 1/2 pontos (boa liquidez)")
             else:
                 breakdown['liquidity'] = 0
-                print(f"   Liquidez: 0/2 pontos (baixa liquidez)")
+                if self.debug_mode: print(f"   Liquidez: 0/2 pontos (baixa liquidez)")
         else:
             breakdown['liquidity'] = 0
-            print(f"   Liquidez: 0/2 pontos (sem dados)")
+            if self.debug_mode: print(f"   Liquidez: 0/2 pontos (sem dados)")
         
         # 3. DESENVOLVIMENTO (0-2 pontos) - Com fallback para tokens estabelecidos
         github_commits = data.get('github_commits', 0)
@@ -177,22 +186,22 @@ class CryptoAnalyzer:
         if market_cap_rank <= 10 and market_cap >= 50_000_000_000:  # Top 10 + >$50B
             breakdown['development'] = 2  # Assume desenvolvimento ativo para blue chips
             score += 2
-            print(f"   ✅ Desenvolvimento: 2/2 pontos (blue chip estabelecido)")
+            if self.debug_mode: print(f"   OK Desenvolvimento: 2/2 pontos (blue chip estabelecido)")
         elif github_commits > 50 or github_stars > 1000:
             breakdown['development'] = 2
             score += 2
-            print(f"   ✅ Desenvolvimento: 2/2 pontos (ativo no GitHub)")
+            if self.debug_mode: print(f"   OK Desenvolvimento: 2/2 pontos (ativo no GitHub)")
         elif github_commits > 10 or github_stars > 100:
             breakdown['development'] = 1
             score += 1
-            print(f"   ⭐ Desenvolvimento: 1/2 pontos (desenvolvimento moderado)")
+            if self.debug_mode: print(f"   OK Desenvolvimento: 1/2 pontos (desenvolvimento moderado)")
         elif market_cap_rank <= 100:  # Top 100 sem dados GitHub = desenvolvimento possível
             breakdown['development'] = 1
             score += 1
-            print(f"   ⭐ Desenvolvimento: 1/2 pontos (Top 100, desenvolvimento inferido)")
+            if self.debug_mode: print(f"   OK Desenvolvimento: 1/2 pontos (Top 100, desenvolvimento inferido)")
         else:
             breakdown['development'] = 0
-            print(f"   Desenvolvimento: 0/2 pontos (sem atividade)")
+            if self.debug_mode: print(f"   Desenvolvimento: 0/2 pontos (sem atividade)")
         
         # 4. COMUNIDADE (0-2 pontos) - Com ajustes para tokens estabelecidos
         twitter_followers = data.get('twitter_followers', 0)
@@ -203,18 +212,18 @@ class CryptoAnalyzer:
         if market_cap_rank <= 5:  # Top 5 = comunidade massiva mesmo sem dados
             breakdown['community'] = 2
             score += 2
-            print(f"   ✅ Comunidade: 2/2 pontos (Top 5 global)")
+            if self.debug_mode: print(f"   OK Comunidade: 2/2 pontos (Top 5 global)")
         elif total_community > 500_000 or twitter_followers > 300_000:
             breakdown['community'] = 2
             score += 2
-            print(f"   ✅ Comunidade: 2/2 pontos (comunidade grande)")
+            if self.debug_mode: print(f"   OK Comunidade: 2/2 pontos (comunidade grande)")
         elif total_community > 50_000 or twitter_followers > 30_000 or market_cap_rank <= 50:
             breakdown['community'] = 1
             score += 1
-            print(f"   ⭐ Comunidade: 1/2 pontos (comunidade boa)")
+            if self.debug_mode: print(f"   OK Comunidade: 1/2 pontos (comunidade boa)")
         else:
             breakdown['community'] = 0
-            print(f"   Comunidade: 0/2 pontos (comunidade pequena)")
+            if self.debug_mode: print(f"   Comunidade: 0/2 pontos (comunidade pequena)")
         
         # 5. PERFORMANCE E ESTABILIDADE (0-2 pontos)
         price_change_30d = data.get('price_change_30d', 0)
@@ -225,29 +234,29 @@ class CryptoAnalyzer:
             if price_change_30d > -30:  # Não está em colapso
                 breakdown['performance'] = 1
                 score += 1
-                print(f"   ⭐ Performance: 1/2 pontos (token estável, +{price_change_30d:.1f}%)")
+                if self.debug_mode: print(f"   OK Performance: 1/2 pontos (token estavel, +{price_change_30d:.1f}%)")
                 
                 # Bonus para performance positiva
                 if price_change_30d > 5:
                     breakdown['performance'] = 2
                     score += 1  # +1 adicional
-                    print(f"   ✅ Performance: 2/2 pontos (boa performance)")
+                    if self.debug_mode: print(f"   OK Performance: 2/2 pontos (boa performance)")
             else:
                 breakdown['performance'] = 0
-                print(f"   Performance: 0/2 pontos (queda severa: {price_change_30d:.1f}%)")
+                if self.debug_mode: print(f"   Performance: 0/2 pontos (queda severa: {price_change_30d:.1f}%)")
         else:
             # Tokens novos precisam de performance positiva
             if price_change_30d > 10:
                 breakdown['performance'] = 2
                 score += 2
-                print(f"   ✅ Performance: 2/2 pontos (token novo com boa performance)")
+                if self.debug_mode: print(f"   OK Performance: 2/2 pontos (token novo com boa performance)")
             elif price_change_30d > 0:
                 breakdown['performance'] = 1
                 score += 1
-                print(f"   ⭐ Performance: 1/2 pontos (performance positiva)")
+                if self.debug_mode: print(f"   OK Performance: 1/2 pontos (performance positiva)")
             else:
                 breakdown['performance'] = 0
-                print(f"   Performance: 0/2 pontos (performance negativa)")
+                if self.debug_mode: print(f"   Performance: 0/2 pontos (performance negativa)")
         
         # AJUSTE FINAL PARA BLUE CHIPS
         # Bitcoin e Ethereum devem ter score mínimo de 7/10
@@ -255,14 +264,15 @@ class CryptoAnalyzer:
             adjustment = 7 - score
             breakdown['blue_chip_adjustment'] = adjustment
             score = 7
-            print(f"   🔧 Ajuste Bitcoin: +{adjustment} pontos (score mínimo 7/10)")
+            if self.debug_mode: print(f"   AJUSTE Bitcoin: +{adjustment} pontos (score minimo 7/10)")
         elif symbol.upper() in ['ETH', 'ETHEREUM'] and score < 7:
             adjustment = 7 - score
             breakdown['blue_chip_adjustment'] = adjustment
             score = 7
-            print(f"   🔧 Ajuste Ethereum: +{adjustment} pontos (score mínimo 7/10)")
+            if self.debug_mode: print(f"   AJUSTE Ethereum: +{adjustment} pontos (score minimo 7/10)")
         
-        print(f"   SCORE FINAL: {score}/10")
+        if self.debug_mode:
+            print(f"   SCORE FINAL: {score}/10")
         
         return {
             'score': min(score, 10),  # Máximo 10
@@ -414,14 +424,14 @@ class CryptoAnalyzer:
         if token_id in ['bitcoin', 'ethereum']:
             classification = "MAJOR"
             description = "Ativo principal do mercado crypto"
-            emoji = "👑"
+            emoji = "MAJOR"
             risk_level = "Estabelecido"
         
         # Por market cap rank
         elif rank <= 10:
             classification = "LARGE CAP"
             description = "Top 10 do mercado"
-            emoji = "💎"
+            emoji = "LARGE"
             risk_level = "Baixo-Médio"
         
         elif rank <= 50:
@@ -643,7 +653,7 @@ class CryptoAnalyzer:
                 print(f"⏳ Aguardando {delay_seconds}s antes do próximo token...")
                 time.sleep(delay_seconds)
         
-        print(f"\n✅ Análise concluída: {len(results)}/{len(tokens)} tokens processados")
+        if self.debug_mode: print(f"\nAnalise concluida: {len(results)}/{len(tokens)} tokens processados")
         return results
     
     def analyze_price_momentum(self, token_id: str, current_data: dict):
@@ -881,7 +891,7 @@ class CryptoAnalyzer:
         try:
             categories = base_analysis.get('data', {}).get('categories', [])
             if any('defi' in str(cat).lower() for cat in categories):
-                print(f"🏦 Token DeFi detectado, buscando métricas DeFiLlama...")
+                if self.debug_mode: print(f"Token DeFi detectado, buscando metricas DeFiLlama...")
                 defi_data = social_analyzer.get_defillama_extended(token_id)
         except Exception as e:
             print(f"Dados DeFi não disponíveis: {e}")
@@ -921,7 +931,7 @@ class CryptoAnalyzer:
                 real_vol_ratio = messari_data['real_volume'] / current_volume
                 if real_vol_ratio > 0.8:  # Volume é majoritariamente real
                     enhanced_score += 0.3
-                    adjustments.append("✅ +0.3 (Volume real verificado)")
+                    adjustments.append("OK +0.3 (Volume real verificado)")
         
         # Bonus por baixa volatilidade (estabilidade)
         if messari_data.get('volatility_30d', 0) > 0:
@@ -933,7 +943,7 @@ class CryptoAnalyzer:
         if defi_data and defi_data.get('tvl_current', 0) > 0:
             if defi_data.get('mcap_to_tvl', 999) < 1.5:
                 enhanced_score += 0.5
-                adjustments.append("🏦 +0.5 (TVL/Mcap saudável)")
+                adjustments.append("DeFi +0.5 (TVL/Mcap saudavel)")
             
             if defi_data.get('revenue_24h', 0) > 100000:  # $100k+ revenue/dia
                 enhanced_score += 0.5
@@ -954,25 +964,58 @@ class CryptoAnalyzer:
                 'sentiment': f"{social_data.get('sentiment_bullish', 50):.0f}% Bullish",
                 'alt_rank': social_data.get('alt_rank', 999),
                 'tweets': social_data.get('tweets', 0),
-                'reddit_posts': social_data.get('reddit_posts', 0)
-            } if social_data.get('galaxy_score', 0) > 0 else None,
+                'reddit_posts': social_data.get('reddit_posts', 0),
+                'sentiment_bullish': social_data.get('sentiment_bullish', 50),
+                'sentiment_bearish': social_data.get('sentiment_bearish', 50),
+                'galaxy_score_change': social_data.get('galaxy_score_change', 0)
+            } if social_data.get('galaxy_score', 0) > 0 else {
+                'galaxy_score': 0,
+                'social_volume': 0,
+                'sentiment': '50% Bullish',
+                'alt_rank': 999,
+                'tweets': 0,
+                'reddit_posts': 0,
+                'sentiment_bullish': 50,
+                'sentiment_bearish': 50,
+                'galaxy_score_change': 0
+            },
             'messari_metrics': {
                 'real_volume': messari_data.get('real_volume', 0),
                 'volatility_30d': messari_data.get('volatility_30d', 0),
                 'developers': messari_data.get('developers_count', 0),
                 'stock_to_flow': messari_data.get('stock_to_flow', 0),
-                'annual_inflation': messari_data.get('annual_inflation', 0)
+                'annual_inflation': messari_data.get('annual_inflation', 0),
+                'volume_turnover': messari_data.get('volume_turnover', 0),
+                'y2050_supply': messari_data.get('y2050_supply', 0),
+                'liquid_supply': messari_data.get('liquid_supply', 0),
+                'watchers': messari_data.get('watchers', 0)
             } if messari_data.get('real_volume', 0) > 0 else None,
             'defi_metrics': {
                 'tvl': defi_data.get('tvl_current', 0),
+                'tvl_current': defi_data.get('tvl_current', 0),
                 'mcap_tvl_ratio': defi_data.get('mcap_to_tvl', 999),
+                'mcap_to_tvl': defi_data.get('mcap_to_tvl', 999),
                 'revenue_24h': defi_data.get('revenue_24h', 0),
                 'revenue_7d': defi_data.get('revenue_7d', 0),
                 'chains': defi_data.get('chains', []),
                 'main_chain': defi_data.get('main_chain', 'unknown'),
-                'category': defi_data.get('category', 'unknown')
+                'category': defi_data.get('category', 'unknown'),
+                'tvl_7d_change': defi_data.get('tvl_7d_change', 0),
+                'tvl_30d_change': defi_data.get('tvl_30d_change', 0),
+                'fees_24h': defi_data.get('fees_24h', 0),
+                'apy': defi_data.get('apy', 0),
+                'user_24h': defi_data.get('user_24h', 0),
+                'tx_count_24h': defi_data.get('tx_count_24h', 0)
             } if defi_data and defi_data.get('tvl_current', 0) > 0 else None,
             'hype_analysis': hype_analysis
+        }
+        
+        # Adiciona campos obrigatórios para DisplayManager
+        enhanced_analysis['decision'] = enhanced_analysis.get('classification', 'N/A')
+        enhanced_analysis['analysis'] = {
+            'strengths': enhanced_analysis.get('strengths', []),
+            'weaknesses': enhanced_analysis.get('weaknesses', []),
+            'risks': []  # Para compatibilidade com save_report
         }
         
         return enhanced_analysis

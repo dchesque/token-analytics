@@ -115,7 +115,7 @@ class DataFetcher:
     
     def _get_cached_or_fetch(self, key, fetch_func):
         if self._is_cache_valid(key):
-            print(f"📦 Usando cache para {key}")
+            print(f"CACHE Usando cache para {key}")
             return self.cache[key][1]
         
         try:

@@ -1,0 +1,2 @@
+TEST FAILED
+Error: Token rejected: []

@@ -27,6 +27,7 @@ from config import (
     LUNARCRUSH_API_KEY, MESSARI_API_KEY
 )
 from enhanced_features import EnhancedAnalyzer
+from display_manager import DisplayManager
 
 console = Console(force_terminal=True, legacy_windows=False)
 
@@ -103,177 +104,14 @@ def save_report(result, format_type='json'):
         return filepath
 
 def display_enhanced_result(result):
-    """Mostra ANÁLISE COMPLETA com dados sociais e hype detection"""
-    
-    if not result.get('passed_elimination', False):
-        console.print(Panel(
-            f"[red]❌ NÃO PASSOU NOS CRITÉRIOS MÍNIMOS[/red]\n\n"
-            f"Motivos:\n" + "\n".join([f"• {reason}" for reason in result.get('elimination_reasons', [])]),
-            title=f"🔍 ANÁLISE: {result.get('token_name', result.get('token', 'UNKNOWN')).upper()}",
-            border_style="red"
-        ))
-        return
-    
-    # Exibe resultado base primeiro com tratamento de erros
-    try:
-        display_result(result)
-    except Exception as e:
-        print(f"Erro ao exibir resultado base: {e}")
-        # Exibe versão simplificada
-        console.print(f"Token: {result.get('token', 'N/A')}")
-        console.print(f"Score: {result.get('score', 0)}/10")
-    
-    # Só mostra hype se existir
-    if 'hype_analysis' in result and result.get('hype_analysis'):
-        try:
-            display_hype_panel(result['hype_analysis'], result.get('token', 'UNKNOWN'))
-        except Exception as e:
-            print(f"Erro ao exibir painel de hype: {e}")
-    
-    # Só mostra social se existir e tiver dados
-    if 'social_metrics' in result:
-        social = result['social_metrics']
-        if social and social.get('galaxy_score', 0) > 0:
-            try:
-                display_social_metrics_panel(social, result.get('token', 'UNKNOWN'))
-            except Exception as e:
-                print(f"Erro ao exibir métricas sociais: {e}")
-    
-    # Só mostra Messari se existir e tiver dados
-    if 'messari_metrics' in result:
-        messari = result['messari_metrics']
-        if messari and messari.get('real_volume', 0) > 0:
-            try:
-                display_messari_panel(messari, result.get('token', 'UNKNOWN'))
-            except Exception as e:
-                print(f"Erro ao exibir métricas Messari: {e}")
-    
-    # Só mostra DeFi se existir e tiver dados
-    if 'defi_metrics' in result:
-        defi = result['defi_metrics']
-        if defi and defi.get('tvl', 0) > 0:
-            try:
-                display_defi_panel(defi, result.get('token', 'UNKNOWN'))
-            except Exception as e:
-                print(f"Erro ao exibir métricas DeFi: {e}")
+    """Exibe resultado usando o novo DisplayManager hierárquico"""
+    display = DisplayManager()
+    display.display_complete_analysis(result)
 
 def display_enhanced_social_analysis(result):
-    """Mostra análise completa com dados sociais"""
-    
-    classification = result['classification_info']
-    sentiment = result['market_sentiment']
-    momentum = result.get('momentum_analysis', {})
-    social = result.get('social_analysis', {})
-    hype = social.get('hype_detection', {})
-    social_data = social.get('social_data', {})
-    messari_data = social.get('messari_data', {})
-    defi_data = social.get('defi_data', {})
-    
-    # Panel principal com análise fundamental
-    fundamental_content = [
-        "══════════════ ANÁLISE FUNDAMENTAL ══════════════",
-        f"{classification['emoji']} CLASSIFICAÇÃO: {classification['classification']}",
-        f"📊 Score Original: {result['score']}/10",
-        f"⭐ Score c/ Social: {result.get('enhanced_score', result['score'])}/10",
-        f"🏆 Posição: {classification['context']}",
-        "",
-        f"📈 QUALIDADE: {classification['quality']}",
-        ""
-    ]
-    
-    # Características positivas
-    if result.get('strengths'):
-        fundamental_content.append("✅ Pontos Fortes:")
-        for strength in result['strengths'][:3]:
-            fundamental_content.append(f"• {strength}")
-        fundamental_content.append("")
-    
-    # Pontos de atenção
-    if result.get('weaknesses'):
-        fundamental_content.append("⚠️ Pontos de Atenção:")
-        for weakness in result['weaknesses'][:2]:
-            fundamental_content.append(f"• {weakness}")
-    else:
-        fundamental_content.append("⚠️ Pontos de Atenção:")
-        fundamental_content.append("• Nenhum ponto crítico identificado")
-    
-    console.print(Panel(
-        "\n".join(fundamental_content),
-        title=f"📊 ANÁLISE FUNDAMENTAL: {result.get('token_name', result.get('token', 'UNKNOWN')).upper()}",
-        border_style="blue",
-        expand=False
-    ))
-    
-    # Panel de Hype Detection (se disponível)
-    if hype:
-        display_hype_panel(hype, result.get('token', 'UNKNOWN'))
-    
-    # Panel de Social Metrics (se disponível)
-    if social_data:
-        display_social_metrics_panel(social_data, result.get('token', 'UNKNOWN'))
-    
-    # Panel de Messari Metrics (se disponível)
-    if messari_data:
-        display_messari_panel(messari_data, result.get('token', 'UNKNOWN'))
-    
-    # Panel de DeFi Metrics (se disponível)
-    if defi_data:
-        display_defi_panel(defi_data, result.get('token', 'UNKNOWN'))
-    
-    # Panel técnico
-    technical_content = [
-        "══════════════ ANÁLISE TÉCNICA ══════════════",
-        f"{momentum.get('emoji', '❓')} MOMENTUM: {momentum.get('trend', 'INDEFINIDO')}",
-        ""
-    ]
-    
-    if momentum.get('signals'):
-        technical_content.append("📊 Sinais Técnicos:")
-        for signal in momentum['signals'][:4]:
-            technical_content.append(f"• {signal}")
-        technical_content.append("")
-    
-    if momentum.get('technical_analysis'):
-        technical_content.append("📈 Resumo Técnico:")
-        for analysis in momentum['technical_analysis'][:3]:
-            technical_content.append(f"• {analysis}")
-        technical_content.append("")
-    
-    # Contexto de mercado
-    technical_content.extend([
-        "══════════════ CONTEXTO DE MERCADO ══════════════",
-        f"{sentiment['emoji']} {sentiment['sentiment']}",
-        f"Fear & Greed Index: {sentiment['value']}/100",
-        "",
-        "📋 MÉTRICAS ATUAIS:",
-        f"• Preço: ${result['price']:,.2f}",
-        f"• Variação 24h: {result.get('price_change_24h', 0):+.1f}%",
-        f"• Variação 7d: {result.get('price_change_7d', 0):+.1f}%",
-        f"• Variação 30d: {result.get('price_change_30d', 0):+.1f}%",
-        "",
-        "⚠️ AVISO IMPORTANTE:",
-        "Esta análise é EDUCACIONAL. Dados sociais podem indicar",
-        "tendências mas não garantem movimentos futuros.",
-        "NÃO é recomendação de investimento. DYOR!"
-    ])
-    
-    border_color = momentum.get('color', 'white')
-    if border_color == 'white':
-        colors = {
-            'BLUE CHIP': 'blue',
-            'ESTABELECIDO': 'green', 
-            'MÉDIO RISCO': 'yellow',
-            'ALTO RISCO': 'orange',
-            'ESPECULATIVO': 'red'
-        }
-        border_color = colors.get(classification['classification'], 'white')
-    
-    console.print(Panel(
-        "\n".join(technical_content),
-        title=f"📈 ANÁLISE TÉCNICA & MERCADO",
-        border_style=border_color,
-        expand=False
-    ))
+    """Usa o novo DisplayManager para análise social"""
+    display = DisplayManager()
+    display.display_complete_analysis(result)
 
 def display_hype_panel(hype_data, token):
     """Display panel com detecção de hype"""
@@ -402,113 +240,8 @@ def display_defi_panel(defi_data, token):
     ))
 
 def display_result(result):
-    """Mostra ANÁLISE COMPLETA do token - fundamental + técnica"""
-    
-    if not result['passed_elimination']:
-        console.print(Panel(
-            f"[red]❌ NÃO PASSOU NOS CRITÉRIOS MÍNIMOS[/red]\n\n"
-            f"Motivos:\n" + "\n".join([f"• {reason}" for reason in result.get('elimination_reasons', [])]),
-            title=f"🔍 ANÁLISE: {result.get('token_name', result.get('token', 'UNKNOWN')).upper()}",
-            border_style="red"
-        ))
-        return
-    
-    # Verifica se campos existem antes de acessar
-    classification = result.get('classification_info', {})
-    sentiment = result.get('market_sentiment', {})
-    momentum = result.get('momentum_analysis', {})
-    
-    # Construir conteúdo da análise completa
-    panel_content_lines = [
-        "══════════════ ANÁLISE FUNDAMENTAL ══════════════",
-        f"{classification.get('emoji', '📊')} CLASSIFICAÇÃO: {classification.get('classification', 'N/A')}",
-        f"📊 Score de Fundamentos: {result.get('score', 0)}/10",
-        f"🏆 Posição: {classification.get('context', 'N/A')}",
-        "",
-        f"📈 QUALIDADE: {classification.get('quality', 'Não analisado')}",
-        ""
-    ]
-    
-    # Características positivas
-    if result.get('strengths'):
-        panel_content_lines.append("✅ Pontos Fortes:")
-        for strength in result['strengths'][:3]:  # Máximo 3
-            panel_content_lines.append(f"• {strength}")
-        panel_content_lines.append("")
-    
-    # Pontos de atenção
-    if result.get('weaknesses'):
-        panel_content_lines.append("⚠️ Pontos de Atenção:")
-        for weakness in result['weaknesses'][:2]:  # Máximo 2
-            panel_content_lines.append(f"• {weakness}")
-    else:
-        panel_content_lines.append("⚠️ Pontos de Atenção:")
-        panel_content_lines.append("• Nenhum ponto crítico identificado")
-    
-    # Análise técnica
-    panel_content_lines.extend([
-        "",
-        "══════════════ ANÁLISE TÉCNICA ══════════════",
-        f"{momentum.get('emoji', '❓')} MOMENTUM: {momentum.get('trend', 'INDEFINIDO')}",
-        ""
-    ])
-    
-    # Sinais técnicos
-    if momentum.get('signals'):
-        panel_content_lines.append("📊 Sinais Técnicos:")
-        for signal in momentum['signals'][:4]:  # Máximo 4
-            panel_content_lines.append(f"• {signal}")
-        panel_content_lines.append("")
-    
-    # Resumo técnico
-    if momentum.get('technical_analysis'):
-        panel_content_lines.append("📈 Resumo Técnico:")
-        for analysis in momentum['technical_analysis'][:3]:  # Máximo 3
-            panel_content_lines.append(f"• {analysis}")
-        panel_content_lines.append("")
-    
-    # Contexto de mercado
-    panel_content_lines.extend([
-        "══════════════ CONTEXTO DE MERCADO ══════════════",
-        f"{sentiment.get('emoji', '😐')} {sentiment.get('sentiment', 'Neutro')}",
-        f"Fear & Greed Index: {sentiment.get('value', 50)}/100",
-        ""
-    ])
-    
-    # Métricas atuais
-    panel_content_lines.extend([
-        "📋 MÉTRICAS ATUAIS:",
-        f"• Preço: ${result['price']:,.2f}",
-        f"• Variação 24h: {result.get('price_change_24h', 0):+.1f}%",
-        f"• Variação 7d: {result.get('price_change_7d', 0):+.1f}%",
-        f"• Variação 30d: {result.get('price_change_30d', 0):+.1f}%",
-        "",
-        "⚠️ AVISO IMPORTANTE:",
-        "Esta análise é EDUCACIONAL. Indicadores técnicos mostram",
-        "momentum passado, não garantem movimentos futuros.",
-        "NÃO é recomendação de investimento. DYOR!"
-    ])
-    
-    # Cor baseada no momentum (se disponível) ou classificação
-    border_color = momentum.get('color', 'white')
-    if border_color == 'white':  # Fallback para classificação
-        colors = {
-            'BLUE CHIP': 'blue',
-            'ESTABELECIDO': 'green', 
-            'MÉDIO RISCO': 'yellow',
-            'ALTO RISCO': 'orange',
-            'ESPECULATIVO': 'red'
-        }
-        border_color = colors.get(classification['classification'], 'white')
-    
-    panel = Panel(
-        "\n".join(panel_content_lines),
-        title=f"📊 ANÁLISE COMPLETA: {result.get('token_name', result.get('token', 'UNKNOWN')).upper()}",
-        border_style=border_color,
-        expand=False
-    )
-    
-    console.print(panel)
+    """Redireciona para o novo sistema de display hierárquico"""
+    display_enhanced_result(result)
 
 def analyze_token(token_query, use_social=True):
     analyzer = CryptoAnalyzer()
