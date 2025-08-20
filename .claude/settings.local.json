@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(py test_fetcher.py)",
+      "Bash(py:*)",
+      "Bash(rm:*)",
+      "Bash(dir)",
+      "Bash(/c/Users/dches/AppData/Local/Microsoft/WindowsApps/python src/main.py bitcoin)",
+      "Bash(set PYTHONIOENCODING=utf-8)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\mnt\\c\\AI Projects\\token-analytics"
+    ]
+  }
+}

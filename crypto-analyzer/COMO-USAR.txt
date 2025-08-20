@@ -1,0 +1,92 @@
+========================================
+    CRYPTO ANALYZER v2.0 - COMO USAR
+========================================
+
+📌 ARQUIVOS EXECUTÁVEIS DISPONÍVEIS:
+=====================================
+
+1. 🚀 Crypto-Analyzer.bat (RECOMENDADO)
+   - Inicializador principal com interface bonita
+   - Verifica dependências automaticamente
+   - Mostra status das APIs
+   - Duplo clique para iniciar
+
+2. ⚡ start.bat (Versão simples)
+   - Inicializador básico e rápido
+   - Duplo clique para iniciar
+
+3. 💎 start.ps1 (PowerShell - Moderno)
+   - Interface colorida e moderna
+   - Clique direito > "Executar com PowerShell"
+
+4. 📊 analyze-bitcoin.bat (Análise direta)
+   - Analisa Bitcoin automaticamente
+   - Copie e edite para outros tokens
+
+========================================
+🔧 CONFIGURAÇÃO INICIAL:
+========================================
+
+1. Para funcionalidades básicas (gratuito):
+   - Apenas execute um dos arquivos .bat
+   - Tudo funciona sem configuração!
+
+2. Para análise social avançada:
+   - Copie .env.example para .env
+   - Adicione suas API keys no arquivo .env
+   - Reinicie a aplicação
+
+========================================
+💡 DICAS DE USO:
+========================================
+
+• Crie um atalho na área de trabalho:
+  - Clique direito no Crypto-Analyzer.bat
+  - Enviar para > Área de trabalho
+
+• Análise rápida de um token:
+  - Abra o prompt de comando
+  - Digite: start.bat bitcoin
+
+• Para modo comparação:
+  - Use a opção 2 no menu interativo
+  - Ou: start.bat --compare bitcoin ethereum
+
+========================================
+📱 COMANDOS ÚTEIS:
+========================================
+
+No menu interativo:
+- Digite o nome do token diretamente
+- Ou escolha uma das opções numeradas
+
+Comandos diretos:
+- python src\main.py bitcoin
+- python src\main.py --compare btc eth sol
+- python src\main.py --watch bitcoin 5
+- python src\main.py --history
+
+========================================
+❓ PROBLEMAS COMUNS:
+========================================
+
+"Python não encontrado":
+→ Instale Python 3.8+ de python.org
+
+"Módulo não encontrado":
+→ Execute: pip install -r requirements.txt
+
+"API não funciona":
+→ Verifique suas keys no arquivo .env
+
+========================================
+📧 SUPORTE:
+========================================
+
+Para ajuda ou sugestões:
+- Verifique a documentação em /docs
+- Veja exemplos em /crypto-analyzer/README.md
+
+========================================
+    Boas análises! 🚀📊💰
+========================================
