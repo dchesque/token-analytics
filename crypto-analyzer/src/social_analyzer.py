@@ -47,6 +47,38 @@ class SocialAnalyzer:
         self.last_request_time = time.time()
         self.request_count += 1
     
+    def test_lunarcrush_connection(self) -> Dict:
+        """Testa conexão com LunarCrush API v4"""
+        if not ENABLE_LUNARCRUSH:
+            return {"success": False, "error": "API key não configurada"}
+        
+        try:
+            headers = {
+                "Authorization": f"Bearer {LUNARCRUSH_API_KEY}",
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            }
+            
+            # Testar endpoint simples
+            url = f"{LUNARCRUSH_API_V4}/public/coins/list"
+            params = {"limit": 1}
+            
+            response = self.session.get(url, headers=headers, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    "success": True, 
+                    "message": f"Conexão OK - {len(data) if isinstance(data, list) else 0} tokens encontrados"
+                }
+            else:
+                return {
+                    "success": False, 
+                    "error": f"HTTP {response.status_code}: {response.text[:100]}"
+                }
+        except Exception as e:
+            return {"success": False, "error": str(e)[:100]}
+
     def get_lunarcrush_data(self, symbol: str) -> Dict:
         """Busca dados sociais - LunarCrush v4 com endpoints corretos"""
         
@@ -58,6 +90,16 @@ class SocialAnalyzer:
         if not ENABLE_LUNARCRUSH:
             print("LunarCrush desabilitado (sem API key) - usando alternativas")
             return self._get_alternative_social_data(symbol)
+        
+        # Teste de conexão (apenas uma vez por sessão)
+        if not hasattr(self, '_lunarcrush_tested'):
+            print("Testando conexão com LunarCrush v4...")
+            test_result = self.test_lunarcrush_connection()
+            if test_result["success"]:
+                print(f"OK: {test_result['message']}")
+            else:
+                print(f"FALHA no teste: {test_result['error']}")
+            self._lunarcrush_tested = True
         
         # Mapeamento para coin IDs conhecidos
         coin_mapping = {
@@ -84,22 +126,31 @@ class SocialAnalyzer:
         # ESTRATÉGIA 1: Tentar endpoint de insights específico
         try:
             url = f"{LUNARCRUSH_API_V4}/public/insights/{coin_id}"
-            print(f"Tentando LunarCrush insights para {coin_id}...")
+            print(f"🔍 Tentando LunarCrush insights: {url}")
+            print(f"🔑 Usando API Key: {LUNARCRUSH_API_KEY[:10]}..." if LUNARCRUSH_API_KEY else "❌ Sem API Key")
             
-            response = self.session.get(url, headers=headers, timeout=10)
+            self._rate_limit()
+            response = self.session.get(url, headers=headers, timeout=15)
+            
+            print(f"📊 Status HTTP: {response.status_code}")
+            if response.status_code != 200:
+                print(f"❌ Erro HTTP: {response.text[:200]}")
             
             if response.status_code == 200:
                 data = response.json()
+                print(f"✅ Dados recebidos: {type(data)} com {len(data) if isinstance(data, (list, dict)) else 0} items")
                 
                 # Processar resposta do endpoint insights
                 if isinstance(data, dict):
                     result = self._parse_lunarcrush_v4_data(data, 'insights')
-                    print(f"LunarCrush dados obtidos via insights")
+                    print(f"✅ LunarCrush dados obtidos via insights")
                     self._save_cache(cache_key, result, CACHE_SOCIAL)
                     return result
                     
+        except requests.exceptions.RequestException as e:
+            print(f"🌐 Erro de conexão no endpoint insights: {str(e)[:100]}")
         except Exception as e:
-            print(f"Erro no endpoint insights: {str(e)[:50]}")
+            print(f"❌ Erro no endpoint insights: {str(e)[:100]}")
         
         # ESTRATÉGIA 2: Time-series endpoint
         try:
@@ -109,21 +160,29 @@ class SocialAnalyzer:
                 'data_points': 7
             }
             
-            print(f"Tentando LunarCrush time-series para {coin_id}...")
-            response = self.session.get(url, headers=headers, params=params, timeout=10)
+            print(f"📈 Tentando LunarCrush time-series: {url}")
+            self._rate_limit()
+            response = self.session.get(url, headers=headers, params=params, timeout=15)
+            
+            print(f"📊 Status HTTP: {response.status_code}")
+            if response.status_code != 200:
+                print(f"❌ Erro HTTP: {response.text[:200]}")
             
             if response.status_code == 200:
                 data = response.json()
+                print(f"✅ Dados recebidos: {type(data)} com {len(data) if isinstance(data, (list, dict)) else 0} items")
                 
                 # Time-series retorna array, pegar o mais recente
                 if isinstance(data, list) and data:
                     result = self._parse_lunarcrush_v4_data(data[-1], 'time-series')
-                    print(f"LunarCrush dados obtidos via time-series")
+                    print(f"✅ LunarCrush dados obtidos via time-series")
                     self._save_cache(cache_key, result, CACHE_SOCIAL)
                     return result
                     
+        except requests.exceptions.RequestException as e:
+            print(f"🌐 Erro de conexão no endpoint time-series: {str(e)[:100]}")
         except Exception as e:
-            print(f"Erro no endpoint time-series: {str(e)[:50]}")
+            print(f"❌ Erro no endpoint time-series: {str(e)[:100]}")
         
         # ESTRATÉGIA 3: Buscar na lista geral e filtrar
         try:
@@ -134,11 +193,17 @@ class SocialAnalyzer:
                 'fields': 'symbol,name,galaxy_score,alt_rank,social_volume,social_dominance'
             }
             
-            print(f"Tentando LunarCrush lista geral...")
-            response = self.session.get(url, headers=headers, params=params, timeout=10)
+            print(f"📋 Tentando LunarCrush lista geral: {url}")
+            self._rate_limit()
+            response = self.session.get(url, headers=headers, params=params, timeout=15)
+            
+            print(f"📊 Status HTTP: {response.status_code}")
+            if response.status_code != 200:
+                print(f"❌ Erro HTTP: {response.text[:200]}")
             
             if response.status_code == 200:
                 data = response.json()
+                print(f"✅ Lista recebida: {len(data) if isinstance(data, list) else 0} tokens")
                 
                 # Procurar nosso token na lista
                 if isinstance(data, list):
@@ -146,14 +211,17 @@ class SocialAnalyzer:
                         if (coin.get('symbol', '').upper() == symbol.upper() or 
                             coin.get('name', '').lower() == coin_id):
                             result = self._parse_lunarcrush_v4_data(coin, 'list')
-                            print(f"LunarCrush dados obtidos via lista")
+                            print(f"✅ Token {symbol} encontrado na lista do LunarCrush")
                             self._save_cache(cache_key, result, CACHE_SOCIAL)
                             return result
+                    print(f"❌ Token {symbol} não encontrado na lista de 100 tokens")
                     
+        except requests.exceptions.RequestException as e:
+            print(f"🌐 Erro de conexão no endpoint lista: {str(e)[:100]}")
         except Exception as e:
-            print(f"Erro no endpoint lista: {str(e)[:50]}")
+            print(f"❌ Erro no endpoint lista: {str(e)[:100]}")
         
-        print(f"LunarCrush v4 falhou para {symbol} - usando alternativas")
+        print(f"🔄 LunarCrush v4 falhou para {symbol} - usando alternativas")
         return self._get_alternative_social_data(symbol)
     
     def _parse_lunarcrush_v4_data(self, data: Dict, source_type: str) -> Dict:

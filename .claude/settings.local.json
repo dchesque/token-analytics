@@ -9,7 +9,9 @@
       "Bash(dir)",
       "Bash(/c/Users/dches/AppData/Local/Microsoft/WindowsApps/python src/main.py bitcoin)",
       "Bash(set PYTHONIOENCODING=utf-8)",
-      "Bash(del test_*.py)"
+      "Bash(del test_*.py)",
+      "Bash(del test_bug_fixes.py)",
+      "Bash(del simple_test.py)"
     ],
     "deny": [],
     "ask": [],

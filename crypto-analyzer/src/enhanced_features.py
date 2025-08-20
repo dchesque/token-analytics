@@ -261,16 +261,22 @@ class EnhancedAnalyzer:
     
     def generate_html_report(self, comparison_result: Dict, filename: str = None) -> Path:
         """Gera relatório HTML com gráfico básico"""
-        if not filename:
-            timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            filename = f"comparison_report_{timestamp}.html"
-        
-        filepath = REPORTS_DIR / filename
-        results = comparison_result['tokens']
+        try:
+            if not filename:
+                timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                filename = f"comparison_report_{timestamp}.html"
+            
+            filepath = REPORTS_DIR / filename
+            results = comparison_result['tokens']
+            
+            console.print(f"[cyan]Gerando relatório HTML: {filename}[/cyan]")
+            
+        except Exception as e:
+            console.print(f"[red]Erro ao inicializar geração do HTML: {str(e)}[/red]")
+            raise
         
         # Template HTML
-        html_template = """
-<!DOCTYPE html>
+        html_template = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -468,21 +474,31 @@ class EnhancedAnalyzer:
                 </tr>
             """)
         
-        # Gerar HTML final
-        html_content = html_template.format(
-            timestamp=timestamp,
-            total_tokens=total_tokens,
-            analysis_date=analysis_date,
-            market_context=market_context,
-            table_rows=''.join(table_rows),
-            chart_data=json.dumps(chart_data)
-        )
-        
-        # Salvar arquivo
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-        
-        return filepath
+        try:
+            # Gerar HTML final - usar replace em vez de format para evitar problemas com {}
+            html_content = html_template
+            html_content = html_content.replace('{timestamp}', timestamp)
+            html_content = html_content.replace('{total_tokens}', str(total_tokens))
+            html_content = html_content.replace('{analysis_date}', str(analysis_date))
+            html_content = html_content.replace('{market_context}', str(market_context))
+            html_content = html_content.replace('{table_rows}', ''.join(table_rows))
+            html_content = html_content.replace('{chart_data}', json.dumps(chart_data))
+            
+            console.print(f"[cyan]Salvando relatório em: {filepath}[/cyan]")
+            
+            # Salvar arquivo
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            
+            console.print(f"[green]Relatório HTML gerado com sucesso![/green]")
+            return filepath
+            
+        except Exception as e:
+            console.print(f"[red]Erro ao gerar ou salvar HTML:[/red]")
+            console.print(f"[yellow]Detalhes: {str(e)}[/yellow]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise
     
     def format_large_number(self, num: float) -> str:
         """Formata números grandes"""
