@@ -1,5 +1,7 @@
 ========================================
-    CRYPTO ANALYZER v2.0 - COMO USAR
+    CRYPTO ANALYZER v2024.2.0 - COMO USAR
+========================================
+    🛡️ Sistema Robusto com APIs Inteligentes
 ========================================
 
 📌 ARQUIVOS EXECUTÁVEIS DISPONÍVEIS:
@@ -8,7 +10,8 @@
 1. 🚀 Crypto-Analyzer.bat (RECOMENDADO)
    - Inicializador principal com interface bonita
    - Verifica dependências automaticamente
-   - Mostra status das APIs
+   - Mostra status das APIs (v2024.2.0)
+   - Rate limiting inteligente integrado
    - Duplo clique para iniciar
 
 2. ⚡ start.bat (Versão simples)
@@ -27,14 +30,21 @@
 🔧 CONFIGURAÇÃO INICIAL:
 ========================================
 
-1. Para funcionalidades básicas (gratuito):
+1. Para funcionalidades básicas (100% GRATUITO):
    - Apenas execute um dos arquivos .bat
-   - Tudo funciona sem configuração!
+   - APIs gratuitas funcionam automaticamente!
+   - CoinGecko + Alternative.me + DeFiLlama
+   - Sistema robusto com fallbacks inteligentes
 
-2. Para análise social avançada:
+2. Para análise social avançada (OPCIONAL):
    - Copie .env.example para .env
-   - Adicione suas API keys no arquivo .env
+   - Adicione sua API key do LunarCrush v4
+   - LUNARCRUSH_API_KEY=your_key_here
    - Reinicie a aplicação
+
+⚡ NOVO v2024.2.0: Sistema funciona perfeitamente 
+   mesmo sem API keys! Fallbacks automáticos garantem
+   que você sempre tenha dados confiáveis.
 
 ========================================
 💡 DICAS DE USO:
@@ -67,26 +77,63 @@ Comandos diretos:
 - python src\main.py --history
 
 ========================================
-❓ PROBLEMAS COMUNS:
+❓ PROBLEMAS COMUNS E SOLUÇÕES v2024.2.0:
 ========================================
 
 "Python não encontrado":
 → Instale Python 3.8+ de python.org
+→ Ou use Microsoft Store (mais fácil)
 
 "Módulo não encontrado":
 → Execute: pip install -r requirements.txt
+→ Ou use o instalador automático (.bat)
 
-"API não funciona":
-→ Verifique suas keys no arquivo .env
+"Emojis não aparecem (Windows)":
+→ NORMAL: Sistema adaptou automaticamente
+→ Funcionalidades não são afetadas
+
+"APIs lentas":
+→ NORMAL: Rate limiting inteligente (4s entre requests)
+→ Evita banimentos e garante estabilidade
+→ Primeira execução sempre mais lenta (sem cache)
+
+"market_chart retorna 401":
+→ NORMAL no plano gratuito CoinGecko
+→ Sistema usa fallback automático para OHLC
+→ Você ainda obtém dados históricos!
+
+"Dados sociais limitados":
+→ Configure API key LunarCrush (opcional)
+→ Ou use dados gratuitos do CoinGecko
+→ Sistema sempre funciona!
 
 ========================================
-📧 SUPORTE:
+📧 SUPORTE E VALIDAÇÃO:
 ========================================
 
-Para ajuda ou sugestões:
-- Verifique a documentação em /docs
-- Veja exemplos em /crypto-analyzer/README.md
+🧪 TESTAR SE TUDO ESTÁ FUNCIONANDO:
+python test_corrections.py
+
+Saída esperada:
+✅ Rate limiting: FUNCIONANDO
+✅ CoinGecko fallback: FUNCIONANDO  
+✅ LunarCrush v4: FUNCIONANDO (ou dados limitados)
+✅ Error handling: FUNCIONANDO
+
+📚 DOCUMENTAÇÃO COMPLETA:
+- /docs/README.md - Documentação técnica
+- /agents/ - Documentação por componente
+- README.md - Guia completo do usuário
+
+🆘 DIAGNÓSTICO DE PROBLEMAS:
+python -c "
+import requests
+print('CoinGecko:', requests.get('https://api.coingecko.com/api/v3/ping').status_code)
+print('Fear & Greed:', requests.get('https://api.alternative.me/fng/').status_code)
+"
 
 ========================================
-    Boas análises! 🚀📊💰
+    🚀 Crypto Analyzer v2024.2.0
+    Sistema Robusto e Confiável!
+    Boas análises! 📊💰
 ========================================

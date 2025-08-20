@@ -1,598 +1,538 @@
-# ⚙️ Agente: Setup e Configuração
+# 🚀 Setup Agent - Instalação e Configuração
 
-## 📋 Objetivo
-Configurar a estrutura completa do projeto Crypto Analyzer com todas as dependências e configurações necessárias.
+## 🎯 Visão Geral
 
-## 🎯 Responsabilidades
+Este guia cobre a instalação completa e configuração do Crypto Analyzer v2024.2.0, incluindo requisitos de sistema, instalação de dependências, configuração de API keys e troubleshooting comum.
 
-### **1. Estrutura do Projeto**
+## 📋 Requisitos de Sistema
 
-#### **Diretórios Principais**
-```
-crypto-analyzer/
-├── src/                    # Código fonte principal
-│   ├── __init__.py
-│   ├── analyzer.py        # Motor de análise
-│   ├── fetcher.py         # Coleta de dados APIs
-│   ├── config.py          # Configurações centralizadas
-│   ├── main.py            # Interface CLI
-│   ├── utils.py           # Utilitários gerais
-│   └── enhanced_features.py # Funcionalidades avançadas
-├── docs/                  # Documentação técnica
-├── agents/               # Documentação dos agentes
-├── data/                # Dados de análise (cache, histórico)
-├── reports/             # Relatórios gerados
-├── tests/              # Testes unitários
-├── requirements.txt    # Dependências Python
-├── README.md          # Documentação principal
-├── .gitignore        # Arquivos ignorados pelo Git
-├── install.bat       # Script de instalação Windows
-└── install.sh        # Script de instalação Unix/Linux
-```
+### **Sistema Operacional**
+- ✅ **Windows** 10/11 (testado)
+- ✅ **macOS** 10.15+ (compatível)
+- ✅ **Linux** Ubuntu 18.04+ / Debian 10+ (compatível)
 
-### **2. Dependências Python**
-
-#### **requirements.txt**
-```txt
-# Core dependencies
-requests>=2.31.0,<3.0.0
-pandas>=2.0.0,<2.2.0
-rich>=13.5.0,<14.0.0
-
-# Utilities
-python-dotenv>=1.0.0,<2.0.0
-click>=8.1.0,<9.0.0
-
-# Development (optional)
-pytest>=7.4.0,<8.0.0
-black>=23.0.0,<24.0.0
-flake8>=6.0.0,<7.0.0
-
-# Documentation (optional)
-mkdocs>=1.5.0,<2.0.0
-mkdocs-material>=9.0.0,<10.0.0
-```
-
-### **3. Configurações Centralizadas**
-
-#### **src/config.py**
-```python
-"""
-Configurações centralizadas do Crypto Analyzer
-Todas as configurações e constantes do sistema
-"""
-
-import os
-from pathlib import Path
-
-# ==================== ESTRUTURA DE DIRETÓRIOS ====================
-
-BASE_DIR = Path(__file__).parent.parent
-SRC_DIR = BASE_DIR / 'src'
-DATA_DIR = BASE_DIR / 'data'
-REPORTS_DIR = BASE_DIR / 'reports'
-DOCS_DIR = BASE_DIR / 'docs'
-AGENTS_DIR = BASE_DIR / 'agents'
-
-# Criar diretórios se não existirem
-for directory in [DATA_DIR, REPORTS_DIR]:
-    directory.mkdir(exist_ok=True)
-
-# ==================== APIs E ENDPOINTS ====================
-
-# CoinGecko API (Free Tier)
-COINGECKO_API = "https://api.coingecko.com/api/v3"
-COINGECKO_ENDPOINTS = {
-    'search': f"{COINGECKO_API}/search",
-    'coins': f"{COINGECKO_API}/coins",
-    'coin_data': f"{COINGECKO_API}/coins/{{id}}",
-    'market_chart': f"{COINGECKO_API}/coins/{{id}}/market_chart",
-    'global': f"{COINGECKO_API}/global"
-}
-
-# Fear & Greed Index
-FEAR_GREED_API = "https://api.alternative.me/fng/"
-
-# DeFiLlama (Optional)
-DEFILLAMA_API = "https://api.llama.fi"
-
-# ==================== RATE LIMITING ====================
-
-# CoinGecko Free Tier Limits
-REQUESTS_PER_MINUTE = 30
-REQUESTS_PER_HOUR = 1000
-MIN_REQUEST_DELAY = 2  # Segundos entre requests
-
-# Cache Settings
-CACHE_DURATION = 300  # 5 minutos em segundos
-ENABLE_CACHE = True
-
-# ==================== CRITÉRIOS DE ANÁLISE ====================
-
-# Camada 1: Eliminatória
-MIN_MARKET_CAP = 1_000_000      # $1M
-MIN_VOLUME = 100_000            # $100K
-MIN_AGE_DAYS = 180              # 6 meses
-MIN_LIQUIDITY_RATIO = 0.001     # Volume/Market Cap mínimo
-
-# Camada 2: Pontuação (0-10)
-SCORING_WEIGHTS = {
-    'market_cap': 2,      # 0-2 pontos
-    'liquidity': 2,       # 0-2 pontos  
-    'development': 2,     # 0-2 pontos
-    'community': 2,       # 0-2 pontos
-    'performance': 2      # 0-2 pontos
-}
-
-# Camada 3: Thresholds de Classificação
-CLASSIFICATION_THRESHOLDS = {
-    'strong_buy': 8,      # Score >= 8
-    'buy': 6,             # Score >= 6
-    'research': 5,        # Score >= 5
-    'caution': 3,         # Score >= 3
-    'avoid': 0            # Score < 3
-}
-
-# ==================== CLASSIFICAÇÕES CRYPTO ====================
-
-# Estrutura de mercado crypto
-MARKET_STRUCTURE = {
-    'MAJORS': {
-        'tokens': ['bitcoin', 'ethereum'],
-        'description': 'Ativos principais do mercado',
-        'allocation': '40-60% do portfolio crypto'
-    },
-    'LARGE_CAPS': {
-        'rank_range': (3, 10),
-        'description': 'Top 10 estabelecidos',
-        'allocation': '20-30% do portfolio'
-    },
-    'MID_CAPS': {
-        'rank_range': (11, 50),
-        'description': 'Projetos sólidos com potencial',
-        'allocation': '10-20% do portfolio'
-    },
-    'SMALL_CAPS': {
-        'rank_range': (51, 100),
-        'description': 'Alto risco, alto retorno potencial',
-        'allocation': '5-10% do portfolio'
-    },
-    'MICRO_CAPS': {
-        'rank_range': (101, 500),
-        'description': 'Projetos pequenos',
-        'allocation': '2-5% do portfolio'
-    },
-    'NANO_CAPS': {
-        'rank_range': (501, float('inf')),
-        'description': 'Projetos muito pequenos',
-        'allocation': '0-2% do portfolio'
-    }
-}
-
-# Categorias especiais
-SPECIAL_CATEGORIES = {
-    'MEME_COINS': ['meme-token', 'meme'],
-    'STABLECOINS': ['stablecoin', 'stablecoins'],
-    'DEFI_TOKENS': ['defi', 'decentralized-finance'],
-    'LAYER_2': ['layer-2', 'scaling'],
-    'GAMING': ['gaming', 'metaverse'],
-    'AI_TOKENS': ['artificial-intelligence', 'ai']
-}
-
-# ==================== ANÁLISE TÉCNICA ====================
-
-# Períodos para análise de momentum
-MOMENTUM_PERIODS = {
-    'short_term': 7,      # 7 dias
-    'medium_term': 30,    # 30 dias
-    'long_term': 90       # 90 dias
-}
-
-# Indicadores técnicos
-RSI_PERIOD = 14
-RSI_OVERBOUGHT = 70
-RSI_OVERSOLD = 30
-
-# ==================== MÉTRICAS DOS MAJORS ====================
-
-# Bitcoin (Digital Gold)
-BITCOIN_METRICS = {
-    'narrative': 'Digital Gold',
-    'adoption_metric': 'Reserva de valor digital',
-    'key_features': [
-        'Supply limitado: 21M BTC',
-        'Halving a cada 4 anos',
-        'Rede mais segura (PoW)',
-        'Primeira criptomoeda'
-    ]
-}
-
-# Ethereum (World Computer)
-ETHEREUM_METRICS = {
-    'narrative': 'World Computer',
-    'adoption_metric': 'Plataforma de smart contracts',
-    'key_features': [
-        'Maior ecossistema DeFi/NFT',
-        'Proof of Stake desde 2022',
-        'L2s para escalabilidade',
-        'EVM padrão da indústria'
-    ]
-}
-
-# ==================== INTERFACE E DISPLAY ====================
-
-# Cores por classificação
-CLASSIFICATION_COLORS = {
-    'MAJOR': 'bright_yellow',
-    'LARGE CAP': 'bright_blue',
-    'MID CAP': 'blue',
-    'SMALL CAP': 'cyan',
-    'MICRO CAP': 'magenta',
-    'NANO CAP': 'red',
-    'MEME COIN': 'yellow',
-    'STABLECOIN': 'green',
-    'LAYER 2': 'bright_cyan',
-    'DEFI': 'bright_magenta',
-    'GAMING': 'bright_green',
-    'AI': 'bright_white'
-}
-
-# Emojis por classificação
-CLASSIFICATION_EMOJIS = {
-    'MAJOR': '👑',
-    'LARGE CAP': '💎',
-    'MID CAP': '⭐',
-    'SMALL CAP': '🔹',
-    'MICRO CAP': '🔸',
-    'NANO CAP': '⚡',
-    'MEME COIN': '🐕',
-    'STABLECOIN': '💵',
-    'LAYER 2': '⚡',
-    'DEFI': '🏦',
-    'GAMING': '🎮',
-    'AI': '🤖'
-}
-
-# ==================== LOGS E DEBUG ====================
-
-# Logging configuration
-LOG_LEVEL = 'INFO'
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-LOG_FILE = DATA_DIR / 'crypto_analyzer.log'
-
-# Debug mode
-DEBUG_MODE = os.getenv('DEBUG', 'False').lower() == 'true'
-VERBOSE_OUTPUT = os.getenv('VERBOSE', 'False').lower() == 'true'
-
-# ==================== VALIDAÇÃO E SANIDADE ====================
-
-# Limites de sanidade para validação de dados
-SANITY_CHECKS = {
-    'max_market_cap': 10_000_000_000_000,  # $10T
-    'max_price': 1_000_000,                # $1M por token
-    'max_volume_ratio': 10,                # 1000% do market cap
-    'max_age_days': 365 * 20,              # 20 anos
-    'min_age_days': 0                      # 0 dias
-}
-
-# ==================== DISCLAIMERS E AVISOS ====================
-
-DISCLAIMER = """
-⚠️ AVISO IMPORTANTE:
-Este sistema é puramente educacional e informativo.
-NÃO constitui consultoria financeira ou recomendação de investimento.
-Sempre faça sua própria pesquisa (DYOR) antes de tomar decisões financeiras.
-Criptomoedas são ativos de alto risco e podem resultar em perdas totais.
-"""
-
-FOOTER_TEXT = """
-🤖 Gerado pelo Crypto Analyzer
-📚 Sistema educacional - Não é consultoria financeira
-🔗 Dados via APIs públicas gratuitas
-"""
-
-# ==================== VERSIONING ====================
-
-VERSION = "2024.1.0"
-BUILD_DATE = "2024-01-15"
-AUTHOR = "Crypto Analyzer Team"
-LICENSE = "MIT"
-
-# ==================== ENVIRONMENT VARIABLES ====================
-
-# Variáveis de ambiente opcionais
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')  # Para métricas de desenvolvimento
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')  # Para notificações
-DISCORD_WEBHOOK = os.getenv('DISCORD_WEBHOOK')  # Para relatórios
-
-# ==================== FEATURE FLAGS ====================
-
-# Funcionalidades opcionais
-FEATURES = {
-    'enable_momentum_analysis': True,
-    'enable_social_metrics': True,
-    'enable_github_metrics': True,
-    'enable_defi_metrics': False,  # Requer APIs adicionais
-    'enable_news_sentiment': False,  # Requer APIs pagas
-    'enable_on_chain_metrics': False  # Requer APIs especializadas
-}
-
-# ==================== EXPORT PARA OUTROS MÓDULOS ====================
-
-__all__ = [
-    'BASE_DIR', 'DATA_DIR', 'REPORTS_DIR',
-    'COINGECKO_API', 'FEAR_GREED_API',
-    'MIN_MARKET_CAP', 'MIN_VOLUME', 'MIN_AGE_DAYS',
-    'REQUESTS_PER_MINUTE', 'CACHE_DURATION',
-    'MARKET_STRUCTURE', 'CLASSIFICATION_COLORS', 'CLASSIFICATION_EMOJIS',
-    'BITCOIN_METRICS', 'ETHEREUM_METRICS',
-    'DISCLAIMER', 'VERSION'
-]
-```
-
-### **4. Scripts de Instalação**
-
-#### **install.sh (Linux/macOS)**
+### **Python**
 ```bash
-#!/bin/bash
-# Crypto Analyzer - Script de Instalação Unix
+# Versão mínima: Python 3.8+
+# Versão recomendada: Python 3.10+
+python --version  # Deve mostrar 3.8+
 
-echo "🚀 Instalando Crypto Analyzer..."
+# No Windows via Microsoft Store ou python.org
+# No macOS: brew install python3
+# No Linux: sudo apt install python3 python3-pip
+```
 
-# Verificar Python
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 não encontrado. Instale Python 3.7+ primeiro."
-    exit 1
-fi
+### **Dependências do Sistema**
+```bash
+# Windows: Nenhuma adicional necessária
+# macOS: 
+brew install curl git
 
-# Criar ambiente virtual
-echo "📦 Criando ambiente virtual..."
-python3 -m venv venv
+# Linux:
+sudo apt update
+sudo apt install curl git python3-pip python3-venv
+```
+
+## 🛠️ Instalação Rápida
+
+### **Método 1: Executáveis (.bat) - Windows** ⚡
+
+```bash
+# 1. Duplo clique em qualquer arquivo .bat:
+Crypto-Analyzer.bat     # ← RECOMENDADO (interface completa)
+start.bat              # Versão simples
+start.ps1              # PowerShell (moderno)
+
+# 2. O sistema automaticamente:
+# ✅ Verifica Python instalado
+# ✅ Instala dependências se necessário  
+# ✅ Configura environment
+# ✅ Executa aplicação
+```
+
+### **Método 2: Instalação Manual** 🔧
+
+```bash
+# 1. Clone ou baixe o repositório
+git clone <repo-url>
+cd crypto-analyzer
+
+# 2. Criar ambiente virtual (recomendado)
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux  
 source venv/bin/activate
 
-# Instalar dependências
-echo "⬇️ Instalando dependências..."
+# 3. Instalar dependências
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Criar diretórios
-echo "📁 Criando estrutura de diretórios..."
-mkdir -p data reports
-
-# Verificar instalação
-echo "🧪 Verificando instalação..."
-python -c "from src.config import VERSION; print(f'✅ Crypto Analyzer v{VERSION} instalado com sucesso!')"
-
-echo "🎉 Instalação concluída!"
-echo "📋 Para usar:"
-echo "   source venv/bin/activate"
-echo "   python src/main.py bitcoin"
+# 4. Executar
+python src/main.py
 ```
 
-#### **install.bat (Windows)**
-```bat
-@echo off
-echo 🚀 Instalando Crypto Analyzer...
+## 📦 Dependências Principais
 
-:: Verificar Python
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo ❌ Python não encontrado. Instale Python 3.7+ primeiro.
-    pause
-    exit /b 1
-)
+### **requirements.txt**
+```python
+# Core dependencies
+requests>=2.31.0          # HTTP requests com Session
+rich>=13.0.0              # Rich console output
+colorama>=0.4.6           # Windows color support
 
-:: Criar ambiente virtual
-echo 📦 Criando ambiente virtual...
-python -m venv venv
-call venv\Scripts\activate.bat
+# Optional but recommended  
+python-dotenv>=1.0.0      # .env file support
+setuptools>=65.0.0        # Python packaging
+urllib3>=2.0.0            # HTTP client
 
-:: Instalar dependências
-echo ⬇️ Instalando dependências...
-python -m pip install --upgrade pip
+# Development (opcional)
+pytest>=7.0.0             # Testing framework
+black>=23.0.0             # Code formatting
+```
+
+### **Instalação de Dependências Específicas**
+```bash
+# Instalação básica (mínima)
+pip install requests rich colorama
+
+# Instalação completa (recomendada)
 pip install -r requirements.txt
 
-:: Criar diretórios
-echo 📁 Criando estrutura de diretórios...
-if not exist data mkdir data
-if not exist reports mkdir reports
-
-:: Verificar instalação
-echo 🧪 Verificando instalação...
-python -c "from src.config import VERSION; print(f'✅ Crypto Analyzer v{VERSION} instalado com sucesso!')"
-
-echo 🎉 Instalação concluída!
-echo 📋 Para usar:
-echo    venv\Scripts\activate.bat
-echo    python src\main.py bitcoin
-pause
+# Desenvolvimento (para contribuidores)
+pip install -r requirements.txt pytest black
 ```
 
-### **5. Controle de Versão**
+## 🔑 Configuração de API Keys
 
-#### **.gitignore**
-```gitignore
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+### **APIs Gratuitas (Funcionam sem configuração)**
 
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
+✅ **CoinGecko API**: Não requer API key (plano gratuito)
+✅ **Alternative.me**: Fear & Greed Index (gratuito)
+✅ **DeFiLlama**: Dados DeFi (gratuito)
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+### **APIs Premium (Opcionais - Melhoram a análise)**
 
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+#### **LunarCrush v4** 🌙
+```bash
+# 1. Registrar em: https://lunarcrush.com/developers
+# 2. Obter API key v4 (não v3!)
+# 3. Configurar:
 
-# Project specific
-.env
-.env.local
-.env.*.local
+# Método A: Arquivo .env (recomendado)
+cp .env.example .env
+# Editar .env:
+LUNARCRUSH_API_KEY=your_v4_key_here
 
-# Data and reports (keep structure, ignore content)
-data/*.json
-data/*.csv
-data/*.log
-reports/*.json
-reports/*.md
-reports/*.html
-reports/*.csv
+# Método B: Variável de ambiente
+export LUNARCRUSH_API_KEY=your_v4_key_here
 
-# Temporary files
-*.tmp
-*.temp
-*.cache
-
-# Logs
-*.log
-logs/
-
-# API keys and secrets
-secrets.py
-config.local.py
-.secrets
-
-# Test coverage
-htmlcov/
-.coverage
-.pytest_cache/
-.tox/
-
-# Documentation build
-docs/_build/
-site/
+# Windows:
+set LUNARCRUSH_API_KEY=your_v4_key_here
 ```
 
-## 🧪 Validação e Testes
+#### **Messari API** 📊
+```bash
+# 1. Registrar em: https://messari.io/api
+# 2. Configurar:
+MESSARI_API_KEY=your_key_here
+```
 
-### **Verificação de Setup**
+#### **GitHub API** 🔧
+```bash
+# 1. Criar token em: GitHub Settings > Developer settings > Personal access tokens
+# 2. Configurar:
+GITHUB_TOKEN=your_token_here
+```
+
+### **Arquivo .env Completo**
+```bash
+# crypto-analyzer/.env
+
+# APIs Premium (opcionais)
+LUNARCRUSH_API_KEY=your_lunarcrush_v4_key
+MESSARI_API_KEY=your_messari_key  
+GITHUB_TOKEN=your_github_token
+
+# Configurações do Sistema (opcionais)
+PYTHONIOENCODING=utf-8
+REQUEST_TIMEOUT=20
+CACHE_DURATION=300
+LOG_LEVEL=INFO
+
+# Configurações de Rate Limiting (avançado)
+MIN_TIME_BETWEEN_REQUESTS=4.0
+MAX_REQUESTS_PER_MINUTE=15
+```
+
+## ⚙️ Configuração Avançada
+
+### **config.py - Parâmetros do Sistema**
+
 ```python
-#!/usr/bin/env python3
-"""
-Script de verificação do setup
-Valida se todas as configurações estão corretas
-"""
+# src/config.py - Principais configurações
 
-def validate_setup():
-    print("🔍 Validando setup do Crypto Analyzer...")
-    
-    # 1. Verificar imports
-    try:
-        from src.config import VERSION, BASE_DIR, DATA_DIR, REPORTS_DIR
-        print(f"✅ Configurações importadas (v{VERSION})")
-    except ImportError as e:
-        print(f"❌ Erro ao importar configurações: {e}")
-        return False
-    
-    # 2. Verificar diretórios
-    for dir_name, dir_path in [("data", DATA_DIR), ("reports", REPORTS_DIR)]:
-        if dir_path.exists():
-            print(f"✅ Diretório {dir_name}/ existe")
-        else:
-            print(f"❌ Diretório {dir_name}/ não encontrado")
-            return False
-    
-    # 3. Verificar dependências
-    required_packages = ['requests', 'pandas', 'rich']
-    for package in required_packages:
-        try:
-            __import__(package)
-            print(f"✅ {package} instalado")
-        except ImportError:
-            print(f"❌ {package} não instalado")
-            return False
-    
-    # 4. Testar conectividade APIs
-    try:
-        import requests
-        from src.config import COINGECKO_API, FEAR_GREED_API
-        
-        # Teste CoinGecko
-        response = requests.get(f"{COINGECKO_API}/ping", timeout=5)
-        if response.status_code == 200:
-            print("✅ CoinGecko API acessível")
-        else:
-            print("⚠️ CoinGecko API com problemas")
-        
-        # Teste Fear & Greed
-        response = requests.get(FEAR_GREED_API, timeout=5)
-        if response.status_code == 200:
-            print("✅ Fear & Greed API acessível")
-        else:
-            print("⚠️ Fear & Greed API com problemas")
-            
-    except Exception as e:
-        print(f"⚠️ Erro ao testar APIs: {e}")
-    
-    print("\n🎉 Setup validado com sucesso!")
-    print(f"📋 Crypto Analyzer v{VERSION} pronto para uso!")
-    return True
+# APIs
+COINGECKO_API = "https://api.coingecko.com/api/v3"
+LUNARCRUSH_API_V4 = "https://lunarcrush.com/api4"
+FEAR_GREED_API = "https://api.alternative.me/fng/"
 
-if __name__ == "__main__":
-    validate_setup()
+# Rate Limiting (ajustar com cuidado)
+MIN_TIME_BETWEEN_REQUESTS = 4.0    # segundos entre requests
+MAX_REQUESTS_PER_MINUTE = 15       # máximo por minuto
+
+# Cache (segundos)
+CACHE_DURATION = 300               # 5 minutos
+CACHE_SOCIAL = 1800               # 30 minutos
+CACHE_DEFI = 3600                 # 1 hora
+
+# Thresholds de Eliminação
+MARKET_CAP_MIN = 1_000_000        # $1M mínimo
+VOLUME_24H_MIN = 100_000          # $100K mínimo
+AGE_DAYS_MIN = 180                # 6 meses mínimo
+
+# Detecção de Hype
+HYPE_THRESHOLDS = {
+    'moderate': 25,    # +25% em volume social
+    'high': 50,        # +50% 
+    'extreme': 100     # +100%
+}
 ```
 
-## ⚠️ Considerações Importantes
+### **Configurações por Ambiente**
 
-### **Compatibilidade**
-- Python 3.7+ obrigatório
-- Compatível com Windows, macOS e Linux
-- Dependências mantidas em versões estáveis
-- Fallbacks para funcionalidades opcionais
+```bash
+# Desenvolvimento (mais logs, cache menor)
+export LOG_LEVEL=DEBUG
+export CACHE_DURATION=60
+export MIN_TIME_BETWEEN_REQUESTS=2.0
 
-### **Segurança**
-- Nenhuma API key obrigatória
-- Todas as APIs usadas são públicas e gratuitas
-- .env e secrets excluídos do controle de versão
-- Validação de entrada em todos os endpoints
+# Produção (conservador, cache maior)
+export LOG_LEVEL=INFO  
+export CACHE_DURATION=600
+export MIN_TIME_BETWEEN_REQUESTS=5.0
 
-### **Performance**
-- Cache configurável para otimização
-- Rate limiting respeitado automaticamente
-- Estrutura de diretórios otimizada
-- Imports lazy quando possível
+# CI/CD (ainda mais conservador)
+export MIN_TIME_BETWEEN_REQUESTS=10.0
+export MAX_REQUESTS_PER_MINUTE=6
+```
 
-### **Manutenibilidade**
-- Configurações centralizadas
-- Constantes bem documentadas
-- Feature flags para funcionalidades experimentais
-- Versionamento semântico
+## 🧪 Validação da Instalação
+
+### **Teste Rápido**
+```bash
+# Teste básico
+python src/main.py bitcoin
+
+# Saída esperada:
+# ✅ APIs conectadas
+# ✅ Bitcoin analisado  
+# ✅ Classificação: MAJOR 👑
+# ✅ Score: 8-10
+```
+
+### **Testes Completos**
+```bash
+# Teste de APIs e fallbacks
+python test_corrections.py
+
+# Saída esperada:
+# ✅ Rate limiting: FUNCIONANDO
+# ✅ CoinGecko fallback: FUNCIONANDO  
+# ✅ LunarCrush v4: FUNCIONANDO
+# ✅ Error handling: FUNCIONANDO
+
+# Teste específico de rate limiting
+python test_rate_limit.py
+
+# Teste de classificações
+python test_crypto_classification.py
+```
+
+### **Diagnóstico de Conectividade**
+```bash
+# Teste manual de APIs
+python -c "
+import requests
+print('CoinGecko:', requests.get('https://api.coingecko.com/api/v3/ping').status_code)
+print('Fear & Greed:', requests.get('https://api.alternative.me/fng/').status_code)
+"
+
+# Saída esperada:
+# CoinGecko: 200
+# Fear & Greed: 200
+```
+
+## 🚨 Troubleshooting Comum
+
+### **Problema: "Python não encontrado"**
+
+```bash
+# Windows:
+# 1. Instalar via Microsoft Store (recomendado)
+# 2. Ou baixar de python.org
+# 3. Verificar: python --version
+
+# macOS:
+brew install python3
+# Ou usar python3 explicitamente
+
+# Linux:
+sudo apt install python3 python3-pip
+```
+
+### **Problema: "Módulo não encontrado"**
+
+```bash
+# Reinstalar dependências
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Se persistir:
+pip cache purge
+pip install --no-cache-dir -r requirements.txt
+
+# Verificar ambiente virtual ativo
+which python  # Deve mostrar path do venv
+```
+
+### **Problema: "UnicodeEncodeError (Windows)"**
+
+```bash
+# Solução 1: Set encoding
+set PYTHONIOENCODING=utf-8
+python src/main.py bitcoin
+
+# Solução 2: Alterar locale
+chcp 65001
+python src/main.py bitcoin
+
+# Solução 3: Usar executável
+# Duplo clique em Crypto-Analyzer.bat
+```
+
+### **Problema: "Todas as APIs falham"**
+
+```bash
+# 1. Verificar conectividade
+ping api.coingecko.com
+
+# 2. Verificar firewall/proxy
+curl -I https://api.coingecko.com/api/v3/ping
+
+# 3. Testar com delays maiores
+export MIN_TIME_BETWEEN_REQUESTS=10.0
+python src/main.py bitcoin
+
+# 4. Verificar se APIs estão online
+# https://status.coingecko.com
+# https://alternative.me
+```
+
+### **Problema: "Rate limit muito restritivo"**
+
+```bash
+# ⚠️ CUIDADO: Ajustar gradualmente
+
+# Em src/config.py:
+MIN_TIME_BETWEEN_REQUESTS = 2.5  # Era 4.0
+MAX_REQUESTS_PER_MINUTE = 20     # Era 15
+
+# Monitorar logs para 429 errors
+# Se aparecerem, reverter para valores conservadores
+```
+
+### **Problema: "LunarCrush sempre retorna dados limitados"**
+
+```bash
+# 1. Verificar API key configurada
+echo $LUNARCRUSH_API_KEY
+
+# 2. Verificar se é key v4 (não v3)
+# 3. Verificar plano da API key (free/paid)
+
+# 4. Sistema funciona sem API key:
+unset LUNARCRUSH_API_KEY
+python src/main.py bitcoin
+# ✅ Usará dados alternativos (CoinGecko community)
+```
+
+## 🐳 Docker (Opcional)
+
+### **Dockerfile**
+```dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+EXPOSE 8000
+
+CMD ["python", "src/main.py"]
+```
+
+### **docker-compose.yml**
+```yaml
+version: '3.8'
+services:
+  crypto-analyzer:
+    build: .
+    environment:
+      - LUNARCRUSH_API_KEY=${LUNARCRUSH_API_KEY}
+      - PYTHONIOENCODING=utf-8
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+```
+
+### **Comandos Docker**
+```bash
+# Build
+docker build -t crypto-analyzer .
+
+# Run
+docker run -e LUNARCRUSH_API_KEY=your_key crypto-analyzer bitcoin
+
+# Com docker-compose
+docker-compose up -d
+```
+
+## 🔄 Atualizações
+
+### **Verificar Versão**
+```bash
+# Versão atual
+python -c "
+import sys
+sys.path.insert(0, 'src')
+from config import VERSION
+print(f'Crypto Analyzer {VERSION}')
+"
+
+# Ou verificar no README.md
+grep "v2024" README.md
+```
+
+### **Atualizar Sistema**
+```bash
+# 1. Backup dados (opcional)
+cp -r data/ data_backup/
+
+# 2. Atualizar código
+git pull origin main
+
+# 3. Atualizar dependências  
+pip install --upgrade -r requirements.txt
+
+# 4. Verificar funcionamento
+python test_corrections.py
+```
+
+## 📊 Monitoramento
+
+### **Logs do Sistema**
+```bash
+# Habilitar logs detalhados
+export LOG_LEVEL=DEBUG
+python src/main.py bitcoin 2>&1 | tee analysis.log
+
+# Analisar logs
+grep "ERROR" analysis.log
+grep "429" analysis.log    # Rate limits
+grep "401" analysis.log    # Auth errors
+```
+
+### **Métricas de Performance**
+```bash
+# Benchmark de performance
+time python src/main.py bitcoin
+
+# Monitorar uso de cache
+grep "Cache hit" analysis.log | wc -l
+grep "API Request" analysis.log | wc -l
+```
+
+## 🏗️ Ambiente de Desenvolvimento
+
+### **Setup para Desenvolvedores**
+```bash
+# 1. Clone e setup
+git clone <repo>
+cd crypto-analyzer
+python -m venv dev-env
+source dev-env/bin/activate  # ou dev-env\Scripts\activate no Windows
+
+# 2. Dependências de desenvolvimento
+pip install -r requirements.txt
+pip install pytest black flake8 mypy
+
+# 3. Pre-commit hooks (opcional)
+pip install pre-commit
+pre-commit install
+
+# 4. Executar testes
+pytest tests/
+python test_corrections.py
+```
+
+### **Estrutura para Desenvolvimento**
+```
+crypto-analyzer/
+├── src/                    # Código principal
+├── tests/                  # Testes unitários  
+├── docs/                   # Documentação
+├── agents/                 # Documentação por agente
+├── data/                   # Cache e dados temporários
+├── requirements.txt        # Dependências
+├── .env.example           # Template de configuração
+└── test_*.py              # Testes de validação
+```
+
+## 🚀 Deploy
+
+### **Servidor Linux**
+```bash
+# 1. Setup servidor
+sudo apt update
+sudo apt install python3 python3-pip python3-venv nginx
+
+# 2. Deploy aplicação
+cd /var/www/
+sudo git clone <repo> crypto-analyzer
+sudo chown -R $USER:$USER crypto-analyzer
+cd crypto-analyzer
+
+# 3. Setup ambiente
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 4. Configurar service (systemd)
+sudo nano /etc/systemd/system/crypto-analyzer.service
+
+# 5. Start service
+sudo systemctl enable crypto-analyzer
+sudo systemctl start crypto-analyzer
+```
 
 ---
 
-**🎯 Objetivo Final:** Setup completo e robusto que permite instalação e uso imediato do Crypto Analyzer
+**🎯 Próximos Passos**
+
+Após a instalação bem-sucedida:
+
+1. **Testar funcionamento**: `python src/main.py bitcoin`
+2. **Configurar API keys** (opcional): Seguir seção de configuração
+3. **Executar testes**: `python test_corrections.py`
+4. **Ler documentação**: Verificar `/docs` e `/agents`
+5. **Usar aplicação**: Executar análises de tokens
+
+**📞 Suporte**
+
+- Documentação completa: [docs/README.md](../docs/README.md)
+- Testes de diagnóstico: `python test_corrections.py`
+- Issues conhecidos: Verificar logs e seção de troubleshooting

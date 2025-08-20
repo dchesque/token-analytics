@@ -1,5 +1,6 @@
 import requests
 import time
+import random
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Any
 from config import COINGECKO_API, FEAR_GREED_API, CACHE_DURATION
@@ -9,15 +10,17 @@ class DataFetcher:
         self.cache = {}
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Crypto-Analyzer/1.0'
+            'User-Agent': 'CryptoAnalyzer/2.0',
+            'Accept': 'application/json'
         })
         
-        # Rate limiting configuration
-        self.last_request_time = None
+        # Rate limiting configuration AJUSTADO
+        self.last_request_time = 0
         self.request_count = 0
-        self.rate_limit_reset = datetime.now()
-        self.MIN_TIME_BETWEEN_REQUESTS = 2.5  # segundos entre requests
-        self.MAX_REQUESTS_PER_MINUTE = 25     # máximo 25 requests por minuto (conservador)
+        self.request_window_start = time.time()
+        self.MIN_TIME_BETWEEN_REQUESTS = 4.0  # Aumentado de 2.5 para 4.0
+        self.MAX_REQUESTS_PER_MINUTE = 15     # Reduzido de 25 para 15 (mais conservador)
+        self.last_endpoint = ""  # Para tracking de endpoint
     
     def _is_cache_valid(self, key):
         if key not in self.cache:
@@ -25,69 +28,87 @@ class DataFetcher:
         timestamp, _ = self.cache[key]
         return time.time() - timestamp < CACHE_DURATION
     
-    def _wait_if_needed(self):
-        """Implementa rate limiting para evitar 429"""
-        # Reseta contador a cada minuto
-        if datetime.now() > self.rate_limit_reset + timedelta(minutes=1):
-            self.request_count = 0
-            self.rate_limit_reset = datetime.now()
+    def _rate_limit(self):
+        """Rate limiting inteligente para evitar 429"""
+        import random
         
-        # Se atingiu limite por minuto, espera
+        current_time = time.time()
+        
+        # Reset contador a cada minuto
+        if current_time - self.request_window_start >= 60:
+            self.request_count = 0
+            self.request_window_start = current_time
+        
+        # Verificar limite por minuto
         if self.request_count >= self.MAX_REQUESTS_PER_MINUTE:
-            wait_time = 60 - (datetime.now() - self.rate_limit_reset).seconds
+            wait_time = 60 - (current_time - self.request_window_start)
             if wait_time > 0:
-                print(f"⏳ Rate limit atingido. Aguardando {wait_time}s...")
+                print(f"Rate limit atingido. Aguardando {wait_time:.1f}s...")
                 time.sleep(wait_time)
                 self.request_count = 0
-                self.rate_limit_reset = datetime.now()
+                self.request_window_start = time.time()
         
-        # Espera mínimo entre requests
-        if self.last_request_time:
-            elapsed = (datetime.now() - self.last_request_time).total_seconds()
-            if elapsed < self.MIN_TIME_BETWEEN_REQUESTS:
-                wait_time = self.MIN_TIME_BETWEEN_REQUESTS - elapsed
-                print(f"⏳ Aguardando {wait_time:.1f}s entre requests...")
-                time.sleep(wait_time)
+        # Delay mínimo entre requests com jitter
+        elapsed = current_time - self.last_request_time
+        jitter = random.uniform(0.5, 1.5)  # Jitter para randomizar timing
+        min_delay = self.MIN_TIME_BETWEEN_REQUESTS + jitter
         
-        self.last_request_time = datetime.now()
+        if elapsed < min_delay:
+            sleep_time = min_delay - elapsed
+            print(f"Aguardando {sleep_time:.1f}s entre requests...")
+            time.sleep(sleep_time)
+        
+        self.last_request_time = time.time()
         self.request_count += 1
     
-    def _make_request(self, url: str, params: Dict = None, retries: int = 3) -> Optional[Dict]:
-        """Faz request com retry logic e rate limiting"""
+    def _make_request(self, url: str, params: Dict = None, headers: Dict = None, retries: int = 3) -> Optional[requests.Response]:
+        """Faz request com retry logic e rate limiting - retorna Response object"""
+        
+        # Headers padrão + headers customizados
+        request_headers = self.session.headers.copy()
+        if headers:
+            request_headers.update(headers)
         
         for attempt in range(retries):
             try:
-                self._wait_if_needed()
+                self._rate_limit()
                 
                 print(f"API Request: {url.split('/')[-1]} (tentativa {attempt+1}/{retries})")
-                response = self.session.get(url, params=params, timeout=15)
+                response = self.session.get(url, params=params, headers=request_headers, timeout=15)
                 
                 if response.status_code == 200:
-                    return response.json()
+                    return response
+                elif response.status_code == 401:
+                    print(f"Erro de autenticação (401): {url}")
+                    print("Pode ser necessário API key ou parâmetros adicionais")
+                    return response  # Retorna resposta para tratamento específico
                 elif response.status_code == 429:
-                    # Rate limit hit - espera progressivamente mais
-                    wait_time = 30 * (attempt + 1)
-                    print(f"Rate limit (429). Aguardando {wait_time}s antes de tentar novamente...")
+                    # Rate limit hit - backoff exponencial
+                    wait_time = min(60, (2 ** attempt) * 10)  # Max 60s
+                    print(f"Rate limit (429). Aguardando {wait_time}s (backoff exponencial)...")
                     time.sleep(wait_time)
-                    # Reset rate limit counter
+                    # Reset contadores
                     self.request_count = 0
-                    self.rate_limit_reset = datetime.now()
+                    self.request_window_start = time.time()
                 elif response.status_code == 404:
                     print(f"Recurso não encontrado (404): {url}")
-                    return None
+                    return response  # Retorna para tratamento específico
                 else:
                     print(f"Erro {response.status_code}: {response.text[:100]}")
                     if attempt == retries - 1:
-                        return None
+                        return response
                     
             except requests.exceptions.Timeout:
-                print(f"⏰ Timeout na requisição (tentativa {attempt+1}/{retries})")
+                print(f"Timeout na requisição (tentativa {attempt+1}/{retries})")
                 if attempt < retries - 1:
-                    time.sleep(5 * (attempt + 1))
+                    # Backoff exponencial para timeouts
+                    wait_time = min(30, (2 ** attempt) * 5)
+                    time.sleep(wait_time)
             except requests.exceptions.RequestException as e:
                 print(f"Erro na requisição (tentativa {attempt+1}/{retries}): {e}")
                 if attempt < retries - 1:
-                    time.sleep(5 * (attempt + 1))
+                    wait_time = min(30, (2 ** attempt) * 5)
+                    time.sleep(wait_time)
         
         print(f"Falha em todas as tentativas para: {url}")
         return None
@@ -146,12 +167,17 @@ class DataFetcher:
         
         # Se não encontrou no mapeamento, tenta a API de search como fallback
         def _search():
-            print(f"🔍 Buscando '{query}' via API (não encontrado no mapeamento direto)")
+            print(f"Buscando '{query}' via API (não encontrado no mapeamento direto)")
             url = f"{COINGECKO_API}/search"
             params = {'query': query}
             
-            data = self._make_request(url, params)
-            if not data:
+            response = self._make_request(url, params)
+            if not response or response.status_code != 200:
+                return None
+            
+            try:
+                data = response.json()
+            except:
                 return None
             
             coins = data.get('coins', [])
@@ -186,11 +212,16 @@ class DataFetcher:
                 'sparkline': 'false'  # Reduz tamanho da resposta
             }
             
-            data = self._make_request(url, params)
-            if not data:
+            response = self._make_request(url, params)
+            if not response or response.status_code != 200:
                 return None
             
-            return self._process_token_data(data, token_id)
+            try:
+                data = response.json()
+                return self._process_token_data(data, token_id)
+            except Exception as e:
+                print(f"Erro ao processar dados do token {token_id}: {e}")
+                return None
         
         return self._get_cached_or_fetch(f"token_{token_id}", _fetch_token)
     
@@ -233,7 +264,15 @@ class DataFetcher:
     
     def get_fear_greed(self):
         def _fetch_fear_greed():
-            data = self._make_request(FEAR_GREED_API)
+            response = self._make_request(FEAR_GREED_API)
+            
+            if not response or response.status_code != 200:
+                return None
+            
+            try:
+                data = response.json()
+            except:
+                return None
             
             if data and 'data' in data and len(data['data']) > 0:
                 latest = data['data'][0]
@@ -359,15 +398,47 @@ class DataFetcher:
             return 90  # ~3 meses (pode falhar na eliminatória)
     
     def get_price_history(self, token_id: str, days: int = 90):
-        """Busca histórico de preços para análise técnica"""
+        """Busca histórico com fallback chain: market_chart -> OHLC -> basic_price"""
         
         cache_key = f"history_{token_id}_{days}"
         if cache_key in self.cache:
             cache_time, cached_data = self.cache[cache_key]
-            if (datetime.now() - cache_time) < timedelta(hours=1):  # Cache por 1 hora
-                print(f"📦 Usando cache para histórico de {token_id}")
+            if (datetime.now() - cache_time) < timedelta(hours=1):
+                print(f"Cache hit para histórico de {token_id}")
                 return cached_data
         
+        print(f"Buscando histórico para {token_id} ({days} dias)...")
+        
+        # TENTATIVA 1: market_chart (dados mais ricos)
+        result = self._try_market_chart(token_id, days)
+        if result:
+            print(f"market_chart OK para {token_id}")
+            self.cache[cache_key] = (datetime.now(), result)
+            return result
+        
+        # TENTATIVA 2: OHLC (fallback para 401 no market_chart)
+        print(f"market_chart falhou, tentando OHLC...")
+        result = self._try_ohlc_data(token_id, min(days, 30))
+        if result:
+            print(f"OHLC OK para {token_id}")
+            self.cache[cache_key] = (datetime.now(), result)
+            return result
+        
+        # TENTATIVA 3: Dados básicos (preço atual)
+        print(f"OHLC também falhou, usando dados básicos...")
+        result = self._get_basic_price_data(token_id)
+        if result:
+            print(f"Dados básicos obtidos para {token_id}")
+            # Cache por menos tempo (dados limitados)
+            cache_time_basic = datetime.now() - timedelta(minutes=30)
+            self.cache[cache_key] = (cache_time_basic, result)
+            return result
+        
+        print(f"Todas as tentativas falharam para {token_id}")
+        return self._empty_price_data()
+    
+    def _try_market_chart(self, token_id: str, days: int) -> Optional[Dict]:
+        """Tenta buscar dados via market_chart"""
         url = f"{COINGECKO_API}/coins/{token_id}/market_chart"
         params = {
             'vs_currency': 'usd',
@@ -375,29 +446,139 @@ class DataFetcher:
             'interval': 'daily' if days > 30 else 'hourly'
         }
         
-        data = self._make_request(url, params, retries=2)  # Menos retries para histórico
+        response = self._make_request(url, params, retries=2)
         
-        if data and 'prices' in data:
-            # Processa em formato útil
+        if response and response.status_code == 200:
+            try:
+                data = response.json()
+                if 'prices' in data and data['prices']:
+                    return self._process_price_data(data)
+            except Exception as e:
+                print(f"Erro ao processar market_chart: {e}")
+        elif response and response.status_code == 401:
+            print(f"market_chart retornou 401 (sem autenticação)")
+        
+        return None
+    
+    def _try_ohlc_data(self, token_id: str, days: int) -> Optional[Dict]:
+        """Tenta buscar dados via OHLC (máx 30 dias)"""
+        url = f"{COINGECKO_API}/coins/{token_id}/ohlc"
+        params = {
+            'vs_currency': 'usd',
+            'days': days
+        }
+        
+        response = self._make_request(url, params, retries=2)
+        
+        if response and response.status_code == 200:
+            try:
+                ohlc_data = response.json()
+                if ohlc_data and len(ohlc_data) > 0:
+                    return self._process_ohlc_data(ohlc_data)
+            except Exception as e:
+                print(f"Erro ao processar OHLC: {e}")
+        
+        return None
+    
+    def _empty_price_data(self) -> Dict:
+        """Retorna estrutura vazia válida quando tudo falha"""
+        return {
+            'prices': [],
+            'volumes': [],
+            'dates': [],
+            'current_price': 0,
+            'min_90d': 0,
+            'max_90d': 0,
+            'avg_30d': 0,
+            'avg_7d': 0,
+            'data_points': 0
+        }
+    
+    def _process_price_data(self, data):
+        """Processa dados do market_chart"""
+        try:
             prices = [p[1] for p in data['prices']]
             volumes = [v[1] for v in data.get('total_volumes', [])]
             
             if not prices:
                 return None
             
-            result = {
+            return {
                 'prices': prices,
                 'volumes': volumes,
                 'dates': [p[0] for p in data['prices']],
-                'current_price': prices[-1] if prices else 0,
-                'min_90d': min(prices) if prices else 0,
-                'max_90d': max(prices) if prices else 0,
-                'avg_30d': sum(prices[-30:]) / len(prices[-30:]) if len(prices) >= 30 else 0,
-                'avg_7d': sum(prices[-7:]) / len(prices[-7:]) if len(prices) >= 7 else 0,
+                'current_price': prices[-1],
+                'min_90d': min(prices),
+                'max_90d': max(prices),
+                'avg_30d': sum(prices[-30:]) / len(prices[-30:]) if len(prices) >= 30 else sum(prices) / len(prices),
+                'avg_7d': sum(prices[-7:]) / len(prices[-7:]) if len(prices) >= 7 else sum(prices) / len(prices),
                 'data_points': len(prices)
             }
+        except Exception as e:
+            print(f"Erro ao processar dados de preço: {e}")
+            return None
+    
+    def _process_ohlc_data(self, ohlc_data):
+        """Processa dados OHLC (Open, High, Low, Close)"""
+        try:
+            # OHLC retorna: [timestamp, open, high, low, close]
+            prices = [candle[4] for candle in ohlc_data]  # Close prices
+            dates = [candle[0] for candle in ohlc_data]
             
-            self.cache[cache_key] = (datetime.now(), result)
-            return result
+            if not prices:
+                return None
+            
+            return {
+                'prices': prices,
+                'volumes': [],  # OHLC não inclui volume
+                'dates': dates,
+                'current_price': prices[-1],
+                'min_90d': min(prices),
+                'max_90d': max(prices),
+                'avg_30d': sum(prices[-30:]) / len(prices[-30:]) if len(prices) >= 30 else sum(prices) / len(prices),
+                'avg_7d': sum(prices[-7:]) / len(prices[-7:]) if len(prices) >= 7 else sum(prices) / len(prices),
+                'data_points': len(prices)
+            }
+        except Exception as e:
+            print(f"Erro ao processar dados OHLC: {e}")
+            return None
+    
+    def _get_basic_price_data(self, token_id):
+        """Fallback: dados básicos sem histórico"""
+        try:
+            # Busca dados atuais do token
+            url = f"{COINGECKO_API}/coins/{token_id}"
+            response = self._make_request(url, retries=1)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                current_price = data.get('market_data', {}).get('current_price', {}).get('usd', 0)
+                
+                if current_price > 0:
+                    return {
+                        'prices': [current_price],
+                        'volumes': [],
+                        'dates': [int(time.time() * 1000)],
+                        'current_price': current_price,
+                        'min_90d': current_price,
+                        'max_90d': current_price,
+                        'avg_30d': current_price,
+                        'avg_7d': current_price,
+                        'data_points': 1
+                    }
+        except Exception as e:
+            print(f"Erro ao buscar dados básicos: {e}")
         
-        return None
+        # Se tudo falhou, retornar estrutura válida vazia
+        print(f"Não foi possível obter histórico completo para {token_id}")
+        return {
+            'prices': [],
+            'volumes': [],
+            'dates': [],
+            'current_price': 0,
+            'min_90d': 0,
+            'max_90d': 0,
+            'avg_30d': 0,
+            'avg_7d': 0,
+            'data_points': 0
+        }

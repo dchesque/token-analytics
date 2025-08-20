@@ -48,7 +48,7 @@ class SocialAnalyzer:
         self.request_count += 1
     
     def get_lunarcrush_data(self, symbol: str) -> Dict:
-        """Busca dados sociais - LunarCrush v4 (requer API key) com fallback"""
+        """Busca dados sociais - LunarCrush v4 com endpoints corretos"""
         
         cache_key = f"lunar_{symbol}"
         if self._check_cache(cache_key, CACHE_SOCIAL):
@@ -59,85 +59,164 @@ class SocialAnalyzer:
             print("LunarCrush desabilitado (sem API key) - usando alternativas")
             return self._get_alternative_social_data(symbol)
         
+        # Mapeamento para coin IDs conhecidos
+        coin_mapping = {
+            'BTC': 'bitcoin',
+            'ETH': 'ethereum', 
+            'BNB': 'binancecoin',
+            'SOL': 'solana',
+            'ADA': 'cardano',
+            'AVAX': 'avalanche',
+            'XRP': 'xrp',
+            'LTC': 'litecoin'
+        }
+        
+        # Converter símbolo para coin ID
+        coin_id = coin_mapping.get(symbol.upper(), symbol.lower())
+        
+        # Headers com autenticação
+        headers = {
+            "Authorization": f"Bearer {LUNARCRUSH_API_KEY}",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        
+        # ESTRATÉGIA 1: Tentar endpoint de insights específico
         try:
-            self._rate_limit()
+            url = f"{LUNARCRUSH_API_V4}/public/insights/{coin_id}"
+            print(f"Tentando LunarCrush insights para {coin_id}...")
             
-            # Nova URL v4 com autenticação
-            url = f"{LUNARCRUSH_API_V4}/public/coins"
-            
-            headers = {
-                "Authorization": f"Bearer {LUNARCRUSH_API_KEY}"
-            }
-            
-            params = {
-                "symbols": symbol.upper(),
-                "interval": "1d",
-                "days": 7
-            }
-            
-            response = self.session.get(url, headers=headers, params=params, timeout=10)
-            
-            # Debug temporário
-            if response.status_code != 200:
-                print(f"LunarCrush v4 retornou status: {response.status_code}")
-                if response.status_code == 401:
-                    print("Erro de autenticação - verifique sua API key")
-                elif response.status_code == 403:
-                    print("Acesso negado - verifique permissões da API key")
+            response = self.session.get(url, headers=headers, timeout=10)
             
             if response.status_code == 200:
-                data = response.json().get('data', [])
+                data = response.json()
                 
-                if data:
-                    # Processa resposta v4 (formato pode ser diferente)
-                    current = data[0] if isinstance(data, list) and data else data
-                    
-                    result = {
-                        # Métricas atuais (adaptadas para v4)
-                        'galaxy_score': current.get('galaxy_score', 0),
-                        'social_volume': current.get('social_volume', 0),
-                        'social_engagement': current.get('social_engagement', 0),
-                        'social_contributors': current.get('social_contributors', 0),
-                        'social_dominance': current.get('social_dominance', 0),
-                        'tweets': current.get('tweets', 0),
-                        'reddit_posts': current.get('reddit_posts', 0),
-                        'news_articles': current.get('news', 0),
-                        
-                        # Sentimento
-                        'sentiment_bullish': current.get('sentiment', {}).get('bullish', 50),
-                        'sentiment_bearish': current.get('sentiment', {}).get('bearish', 50),
-                        
-                        # Variações (calculadas se histórico disponível)
-                        'social_volume_change': current.get('social_volume_24h_change', 0),
-                        'galaxy_score_change': current.get('galaxy_score_24h_change', 0),
-                        'alt_rank': current.get('alt_rank', 999),
-                        
-                        # Metadados
-                        'source': 'lunarcrush_v4',
-                        'history_7d': []  # v4 pode não retornar histórico na mesma call
-                    }
-                    
+                # Processar resposta do endpoint insights
+                if isinstance(data, dict):
+                    result = self._parse_lunarcrush_v4_data(data, 'insights')
+                    print(f"LunarCrush dados obtidos via insights")
                     self._save_cache(cache_key, result, CACHE_SOCIAL)
                     return result
                     
-            elif response.status_code == 401:
-                print("LunarCrush: API key inválida - usando alternativas")
-                return self._get_alternative_social_data(symbol)
-            elif response.status_code == 429:
-                print("LunarCrush: Rate limit atingido - usando alternativas")
-                return self._get_alternative_social_data(symbol)
-                
-        except requests.exceptions.ConnectionError:
-            print("LunarCrush não disponível - usando alternativas")
-            return self._get_alternative_social_data(symbol)
-        except requests.exceptions.Timeout:
-            print("LunarCrush timeout - usando alternativas")
-            return self._get_alternative_social_data(symbol)
         except Exception as e:
-            print(f"Erro LunarCrush: {str(e)[:100]} - usando alternativas")
-            return self._get_alternative_social_data(symbol)
+            print(f"Erro no endpoint insights: {str(e)[:50]}")
         
+        # ESTRATÉGIA 2: Time-series endpoint
+        try:
+            url = f"{LUNARCRUSH_API_V4}/public/coins/{coin_id}/time-series"
+            params = {
+                'interval': '1d',
+                'data_points': 7
+            }
+            
+            print(f"Tentando LunarCrush time-series para {coin_id}...")
+            response = self.session.get(url, headers=headers, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Time-series retorna array, pegar o mais recente
+                if isinstance(data, list) and data:
+                    result = self._parse_lunarcrush_v4_data(data[-1], 'time-series')
+                    print(f"LunarCrush dados obtidos via time-series")
+                    self._save_cache(cache_key, result, CACHE_SOCIAL)
+                    return result
+                    
+        except Exception as e:
+            print(f"Erro no endpoint time-series: {str(e)[:50]}")
+        
+        # ESTRATÉGIA 3: Buscar na lista geral e filtrar
+        try:
+            url = f"{LUNARCRUSH_API_V4}/public/coins/list"
+            params = {
+                'sort': 'galaxy_score',
+                'limit': 100,
+                'fields': 'symbol,name,galaxy_score,alt_rank,social_volume,social_dominance'
+            }
+            
+            print(f"Tentando LunarCrush lista geral...")
+            response = self.session.get(url, headers=headers, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Procurar nosso token na lista
+                if isinstance(data, list):
+                    for coin in data:
+                        if (coin.get('symbol', '').upper() == symbol.upper() or 
+                            coin.get('name', '').lower() == coin_id):
+                            result = self._parse_lunarcrush_v4_data(coin, 'list')
+                            print(f"LunarCrush dados obtidos via lista")
+                            self._save_cache(cache_key, result, CACHE_SOCIAL)
+                            return result
+                    
+        except Exception as e:
+            print(f"Erro no endpoint lista: {str(e)[:50]}")
+        
+        print(f"LunarCrush v4 falhou para {symbol} - usando alternativas")
         return self._get_alternative_social_data(symbol)
+    
+    def _parse_lunarcrush_v4_data(self, data: Dict, source_type: str) -> Dict:
+        """Parse dados LunarCrush v4 com adaptação para diferentes formatos"""
+        return {
+            # Métricas principais (tentativas múltiplas de campos)
+            'galaxy_score': float(data.get('galaxy_score', data.get('gs', data.get('score', 0)))),
+            'social_volume': int(data.get('social_volume', data.get('sv', data.get('volume', 0)))),
+            'social_engagement': int(data.get('social_engagement', data.get('se', 0))),
+            'social_contributors': int(data.get('social_contributors', data.get('sc', 0))),
+            'social_dominance': float(data.get('social_dominance', data.get('sd', 0))),
+            
+            # Atividade social
+            'tweets': int(data.get('tweets', data.get('t', data.get('twitter_posts', 0)))),
+            'reddit_posts': int(data.get('reddit_posts', data.get('reddit', {}).get('posts', 0))),
+            'news_articles': int(data.get('news', data.get('n', data.get('news_articles', 0)))),
+            
+            # Sentimento (com fallback)
+            'sentiment_bullish': self._extract_sentiment(data, 'bullish'),
+            'sentiment_bearish': self._extract_sentiment(data, 'bearish'),
+            
+            # Variações
+            'social_volume_change': float(data.get('social_volume_24h_change', 
+                                                  data.get('sv24h', 
+                                                          data.get('change_24h', 0)))),
+            'alt_rank': int(data.get('alt_rank', data.get('rank', data.get('market_cap_rank', 999)))),
+            'social_volume_24h': int(data.get('social_volume', data.get('sv24h', 0))),
+            'galaxy_score_change': float(data.get('galaxy_score_24h_change', data.get('gs24h', 0))),
+            
+            # Metadata
+            'source': f'lunarcrush_v4_{source_type}',
+            'history_7d': []
+        }
+    
+    def _extract_sentiment(self, data: Dict, sentiment_type: str) -> float:
+        """Extrai sentimento com múltiplas tentativas de formato"""
+        try:
+            # Formato 1: sentiment.bullish/bearish
+            sentiment_obj = data.get('sentiment', {})
+            if isinstance(sentiment_obj, dict) and sentiment_type in sentiment_obj:
+                return float(sentiment_obj[sentiment_type])
+            
+            # Formato 2: sentiment_bullish/sentiment_bearish
+            key = f'sentiment_{sentiment_type}'
+            if key in data:
+                return float(data[key])
+            
+            # Formato 3: bs/br (bullish score, bearish score)
+            short_key = 'bs' if sentiment_type == 'bullish' else 'br'
+            if short_key in data:
+                return float(data[short_key])
+            
+            # Formato 4: percent_change_24h_sentiment (v2 legacy)
+            if sentiment_type == 'bullish' and 'percent_change_24h_sentiment' in data:
+                return float(data['percent_change_24h_sentiment'])
+            elif sentiment_type == 'bearish' and 'percent_change_24h_sentiment' in data:
+                return 100 - float(data['percent_change_24h_sentiment'])
+                
+        except (ValueError, TypeError):
+            pass
+        
+        # Default: neutro
+        return 50.0
     
     def _get_alternative_social_data(self, symbol: str) -> Dict:
         """Alternativa gratuita para dados sociais usando CryptoCompare e CoinGecko"""

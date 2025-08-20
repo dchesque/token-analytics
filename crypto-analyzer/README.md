@@ -1,6 +1,8 @@
-# 🚀 Crypto Analyzer
+# 🚀 Crypto Analyzer v2.0
 
-Sistema avançado de análise de criptomoedas com terminologia correta do mercado crypto e classificações precisas.
+**Análise Inteligente de Criptomoedas com IA**
+
+Sistema completo de análise fundamental, técnica e social de tokens baseado em múltiplas fontes de dados e algoritmos de inteligência artificial.
 
 ## ⭐ Principais Características
 
@@ -12,65 +14,36 @@ Sistema avançado de análise de criptomoedas com terminologia correta do mercad
 - **💎 Métricas Especiais**: Bitcoin e Ethereum com análises customizadas
 - **📈 Interface CLI Rica**: Cores, emojis, progresso em tempo real
 
-## 📋 Instalação Rápida
+## 🚀 Início Rápido
 
-### Windows
-```bash
-# Download e execute o instalador
-install.bat
+### 1. **Execução Simples (2 cliques)**
+```
+Duplo clique em: Crypto-Analyzer.bat
 ```
 
-### Linux/macOS
+### 2. **Instalação Manual**
 ```bash
-# Torne executável e execute
-chmod +x install.sh
-./install.sh
-```
-
-### Instalação Manual
-```bash
-# Crie ambiente virtual
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate.bat  # Windows
-
 # Instale dependências
 pip install -r requirements.txt
 
-# Teste a instalação
-python test_crypto_classification.py
+# Execute
+python src/main.py
 ```
 
-## 🎯 Como Usar
+## 💡 Uso
 
-### 🔥 Análise Básica
+### **Linha de Comando**
 ```bash
-# Analise Bitcoin
+# Análise individual
 python src/main.py bitcoin
 
-# Analise Ethereum  
-python src/main.py ethereum
+# Comparar tokens
+python src/main.py --compare bitcoin ethereum solana
 
-# Múltiplos tokens
-python src/main.py bitcoin ethereum cardano solana
-```
+# Modo monitoramento
+python src/main.py --watch bitcoin 5
 
-### ⚖️ Modo Comparativo
-```bash
-# Compare tokens lado a lado
-python src/main.py --compare bitcoin ethereum bnb cardano
-```
-
-### 📊 Análise em Lote
-```bash
-# Arquivo com lista de tokens
-python src/main.py --batch my_portfolio.txt
-```
-
-### 🎨 Modo Interativo
-```bash
-# Interface interativa completa
+# Modo interativo
 python src/main.py
 ```
 
@@ -188,25 +161,41 @@ crypto-analyzer/
 └── install.sh          # 🐧 Instalador Unix
 ```
 
-## 🌐 APIs Utilizadas (100% Gratuitas)
+## 🌐 APIs Utilizadas (Robustas e Confiáveis)
 
-1. **CoinGecko API**
+### **APIs Principais (100% Gratuitas)**
+
+1. **CoinGecko API v3** 🥇
    - Dados de preço, volume, market cap
    - Rankings e métricas de mercado
-   - Histórico de preços
-   - Rate limit: 30 requests/minuto
+   - Histórico de preços com fallback chain
+   - **Rate limiting inteligente**: 15 requests/minuto
+   - **Fallback automático**: market_chart → OHLC → basic_price
 
-2. **Alternative.me Fear & Greed Index**
+2. **Alternative.me Fear & Greed Index** 🎯
    - Índice de medo e ganância
    - Sentimento do mercado crypto
    - Dados históricos
 
-3. **GitHub API** (Opcional)
+### **APIs Premium (Opcionais)**
+
+3. **LunarCrush API v4** 🌙
+   - Análise social avançada (requer API key)
+   - Galaxy Score e métricas sociais
+   - **Estratégia tripla**: insights → time-series → lista
+   - **Fallback inteligente** para dados gratuitos
+
+4. **Messari API** 📊
+   - Dados fundamentais avançados (opcional)
+   - Métricas de tokenomics
+
+5. **GitHub API** 🔧
    - Métricas de desenvolvimento
    - Atividade dos repositórios
 
 ## 🧪 Testes e Validação
 
+### **Testes Principais**
 ```bash
 # Teste das classificações crypto corretas
 python test_crypto_classification.py
@@ -214,16 +203,19 @@ python test_crypto_classification.py
 # Teste do sistema de análise completo
 python test_analyzer.py  
 
-# Teste do fetcher de dados
-python test_fetcher.py
+# Teste das correções de API (NOVO)
+python test_corrections.py
+
+# Teste específico do rate limiting
+python test_rate_limit.py
 ```
 
 ### **Casos de Teste Validados** ✅
-- Bitcoin → 👑 MAJOR
-- Ethereum → 👑 MAJOR  
-- Cardano → 💎 LARGE CAP
-- Shiba Inu → 🐕 MEME COIN
-- USDC → 💵 STABLECOIN
+- **Classificações**: Bitcoin → 👑 MAJOR, Ethereum → 👑 MAJOR, Cardano → 💎 LARGE CAP
+- **APIs Robustas**: Fallback chain testada (market_chart → OHLC → basic_price)
+- **Rate Limiting**: 4s+ delays com jitter, backoff exponencial
+- **Tratamento de Erros**: 401, 404, 429 tratados adequadamente
+- **LunarCrush v4**: Estratégia tripla com fallback funcionando
 
 ## 📈 Funcionalidades Avançadas
 
@@ -294,11 +286,13 @@ print('Fear & Greed:', requests.get('https://api.alternative.me/fng/').status_co
 "
 ```
 
-### **Rate Limiting**
-O sistema implementa rate limiting automático:
-- Delay de 2s entre requests
-- Máximo 30 requests/minuto
-- Retry automático em caso de limite
+### **Rate Limiting Inteligente v2.1** ⚡
+O sistema implementa rate limiting robusto e inteligente:
+- **Delay base**: 4s entre requests (com jitter)
+- **Máximo**: 15 requests/minuto (conservador)
+- **Backoff exponencial**: 10s → 20s → 40s para 429
+- **Detecção de endpoints**: Delays específicos por tipo
+- **Retry automático** com circuit breaker
 
 ## 📚 Documentação Completa
 
@@ -353,7 +347,7 @@ python test_crypto_classification.py
 
 ---
 
-**🤖 Crypto Analyzer v2024.1.0**  
-*Sistema educacional de análise crypto com terminologia correta do mercado*
+**🤖 Crypto Analyzer v2024.2.0**  
+*Sistema educacional de análise crypto robusto e confiável com APIs inteligentes*
 
 **⚠️ Disclaimer**: Não constitui consultoria financeira. Sempre faça sua própria pesquisa (DYOR) antes de tomar decisões de investimento.
