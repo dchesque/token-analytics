@@ -1,5 +1,23 @@
 # 📋 Changelog - Crypto Analyzer
 
+## v2024.2.2 - API Updates (20/08/2025)
+
+### 📝 Mudanças
+- Documentado que LunarCrush v4 agora requer assinatura paga
+- Desabilitado LunarCrush por padrão (ENABLE_LUNARCRUSH = False)
+- Melhorada documentação sobre fallback para dados sociais
+- Sistema continua 100% funcional com dados alternativos
+
+### ⚠️ Breaking Changes
+- LunarCrush API v4 não funciona mais com API key gratuita
+- Necessário plano Individual ($29/mês) ou superior
+
+### 🔧 Correções
+- Corrigida URL da API LunarCrush: `/api/v4` → `/api4`
+- Corrigidos endpoints v4: topic/v1 e coins/list/v1
+- Melhorado tratamento de erro HTTP 402 (Payment Required)
+- Atualizada documentação com status atual das APIs
+
 ## 🎯 v2024.2.1 (Current) - "Sistema Hierárquico Profissional"
 
 **Data de Lançamento**: Agosto 2025  

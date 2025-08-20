@@ -115,10 +115,14 @@ pip install -r requirements.txt pytest black
 
 ### **APIs Premium (Opcionais - Melhoram a análise)**
 
-#### **LunarCrush v4** 🌙
+#### **LunarCrush v4** 🌙 
+**⚠️ ATENÇÃO: Requer assinatura paga ($29+/mês)**
+
 ```bash
-# 1. Registrar em: https://lunarcrush.com/developers
-# 2. Obter API key v4 (não v3!)
+# 1. Assinar plano Individual ou superior em:
+#    https://lunarcrush.com/pricing
+# 2. Obter API key em:
+#    https://lunarcrush.com/developers
 # 3. Configurar:
 
 # Método A: Arquivo .env (recomendado)
@@ -131,7 +135,11 @@ export LUNARCRUSH_API_KEY=your_v4_key_here
 
 # Windows:
 set LUNARCRUSH_API_KEY=your_v4_key_here
+
+# 4. Habilitar em config.py:
+# ENABLE_LUNARCRUSH = True
 ```
+**Nota**: Sistema funciona perfeitamente sem LunarCrush usando dados alternativos do CoinGecko.
 
 #### **Messari API** 📊
 ```bash

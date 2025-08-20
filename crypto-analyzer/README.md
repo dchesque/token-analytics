@@ -367,13 +367,25 @@ crypto-analyzer/
    - Sentimento do mercado crypto
    - Dados históricos
 
+## ⚠️ Status das APIs (Agosto 2025)
+
+| API | Status | Observação |
+|-----|--------|------------|
+| ✅ **CoinGecko** | Funcionando | Rate limit aplicado, fallback OHLC automático |
+| ✅ **DeFiLlama** | Funcionando | Dados DeFi disponíveis |
+| ✅ **Fear & Greed** | Funcionando | Índice de medo e ganância |
+| ⚠️ **LunarCrush v4** | Requer Plano Pago | Necessário plano Individual+ ($29+/mês) |
+| ✅ **Fallback Social** | Funcionando | Usa CoinGecko community automaticamente |
+
+**Nota:** O sistema funciona perfeitamente sem LunarCrush graças ao fallback automático.
+
 ### **APIs Premium (Opcionais)**
 
-3. **LunarCrush API v4** 🌙
-   - Análise social avançada (requer API key)
+3. **LunarCrush API v4** 🌙 **⚠️ REQUER ASSINATURA PAGA**
+   - Análise social avançada (plano Individual $29+/mês)
    - Galaxy Score e métricas sociais
-   - **Estratégia tripla**: insights → time-series → lista
-   - **Fallback inteligente** para dados gratuitos
+   - **Status**: Requer assinatura paga desde agosto 2025
+   - **Fallback inteligente** usa dados do CoinGecko community
 
 4. **Messari API** 📊
    - Dados fundamentais avançados (opcional)

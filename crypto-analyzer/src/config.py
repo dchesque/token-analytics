@@ -34,12 +34,15 @@ LUNARCRUSH_API_KEY = os.getenv('LUNARCRUSH_API_KEY', None)
 MESSARI_API_KEY = os.getenv('MESSARI_API_KEY', None)
 
 # URLs das APIs v4/autenticadas
-LUNARCRUSH_API_V4 = "https://lunarcrush.com/api/v4"
+LUNARCRUSH_API_V4 = "https://lunarcrush.com/api4"
 MESSARI_API = "https://data.messari.io/api/v1"
 CRYPTOCOMPARE_API = "https://min-api.cryptocompare.com/data"
 
+# Status das APIs
+LUNARCRUSH_STATUS = "REQUIRES_PAID_SUBSCRIPTION"  # v4 requer plano Individual+ ($29+/mês)
+
 # Flags de features baseadas nas keys disponíveis
-ENABLE_LUNARCRUSH = LUNARCRUSH_API_KEY is not None
+ENABLE_LUNARCRUSH = False  # Desabilitar por padrão até ter assinatura paga
 ENABLE_MESSARI = MESSARI_API_KEY is not None
 USE_ALTERNATIVE_SOCIAL = True  # Usa alternativas quando LunarCrush não disponível
 

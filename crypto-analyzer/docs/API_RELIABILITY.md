@@ -45,17 +45,39 @@ def get_price_history(self, token_id: str, days: int = 90):
     return self._empty_price_data()
 ```
 
-### **LunarCrush v4 Strategy Pattern**
+### **LunarCrush v4 - Modelo de Assinatura**
+
+**Status:** Requer assinatura paga (agosto 2025)
+
+**Detalhes:**
+- API key gratuita não é mais suficiente
+- Requer plano Individual ($29/mês) ou superior
+- Retorna HTTP 402 (Payment Required) sem assinatura
+
+**Fallback Implementado:**
+1. Sistema detecta erro 402
+2. Automaticamente usa CoinGecko community data
+3. Métricas básicas disponíveis:
+   - Reddit subscribers
+   - Twitter followers  
+   - Community score
+   - Developer score
+
+**Para Habilitar LunarCrush:**
+1. Assinar plano em https://lunarcrush.com/pricing
+2. Obter API key em https://lunarcrush.com/developers
+3. Configurar em .env: `LUNARCRUSH_API_KEY=sua_key`
+4. Em config.py: `ENABLE_LUNARCRUSH = True`
+
+### **LunarCrush v4 Strategy Pattern (Com Assinatura)**
 
 ```python
-# Estratégia Tripla para LunarCrush
-1. insights_endpoint (dados específicos do token)
-   ↓ FALHA (404 Not Found)
-2. time_series_endpoint (dados históricos)
-   ↓ FALHA (401 API Key Invalid)  
-3. list_endpoint (busca em lista geral)
-   ↓ FALHA (429 Rate Limited)
-4. alternative_social_data (CryptoCompare/CoinGecko)
+# Estratégia para LunarCrush v4 Pago
+1. topic_endpoint (dados gerais do tópico)
+   ↓ FALHA (402 Payment Required sem assinatura)
+2. coins_endpoint (dados específicos de coins)
+   ↓ FALHA (402 Payment Required)  
+3. alternative_social_data (CoinGecko community - SEMPRE DISPONÍVEL)
 
 # Implementação
 def get_lunarcrush_data(self, symbol: str):
