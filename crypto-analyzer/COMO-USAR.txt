@@ -1,7 +1,7 @@
 ========================================
-    CRYPTO ANALYZER v2024.2.0 - COMO USAR
+    CRYPTO ANALYZER v2024.2.1 - COMO USAR
 ========================================
-    🛡️ Sistema Robusto com APIs Inteligentes
+    🎯 Sistema Hierárquico Profissional
 ========================================
 
 📌 ARQUIVOS EXECUTÁVEIS DISPONÍVEIS:
@@ -42,9 +42,43 @@
    - LUNARCRUSH_API_KEY=your_key_here
    - Reinicie a aplicação
 
-⚡ NOVO v2024.2.0: Sistema funciona perfeitamente 
-   mesmo sem API keys! Fallbacks automáticos garantem
-   que você sempre tenha dados confiáveis.
+⚡ NOVO v2024.2.1: Sistema Hierárquico Profissional!
+   Análises organizadas em camadas claras com gestão
+   de risco integrada e estratégias de trading.
+
+========================================
+🆕 NOVO SISTEMA HIERÁRQUICO v2024.2.1:
+========================================
+
+Agora o Crypto Analyzer exibe resultados em formato
+profissional hierárquico com 3 camadas principais:
+
+📊 CAMADA 1 - ELIMINATÓRIA:
+  - Critérios mínimos (Market Cap, Volume, Idade)
+  - Status: APROVADO ou REJEITADO com motivos
+
+📊 CAMADA 2 - PONTUAÇÃO:
+  - Score detalhado 0-10 com barras visuais
+  - Breakdown por categoria (Market, Liquidez, etc.)
+  - Grade A/B/C/D baseada no score
+
+📊 CAMADA 3 - DECISÃO:
+  - CONSIDERAR COMPRA / ESTUDAR MAIS / EVITAR
+  - Classificação (MAJOR, LARGE CAP, etc.)
+  - Contexto Fear & Greed
+  - Pontos fortes e fracos
+
+📊 ANÁLISES COMPLEMENTARES:
+  - 💹 Níveis de Preço e Estratégias
+  - 📈 Análise Técnica e Momentum
+  - 🔥 Detecção de Hype e FOMO
+  - ⛓️ Métricas On-Chain (DeFi tokens)
+
+📊 GESTÃO DE RISCO:
+  - Tamanho de posição sugerido (5-20% portfolio)
+  - Risk/Reward ratios calculados
+  - Estratégias DCA personalizadas
+  - Mapa de suportes e resistências
 
 ========================================
 💡 DICAS DE USO:
@@ -77,7 +111,7 @@ Comandos diretos:
 - python src\main.py --history
 
 ========================================
-❓ PROBLEMAS COMUNS E SOLUÇÕES v2024.2.0:
+❓ PROBLEMAS COMUNS E SOLUÇÕES v2024.2.1:
 ========================================
 
 "Python não encontrado":
@@ -114,11 +148,16 @@ Comandos diretos:
 🧪 TESTAR SE TUDO ESTÁ FUNCIONANDO:
 python test_corrections.py
 
+🆕 TESTAR NOVO SISTEMA HIERÁRQUICO:
+python test_new_display.py
+
 Saída esperada:
 ✅ Rate limiting: FUNCIONANDO
 ✅ CoinGecko fallback: FUNCIONANDO  
 ✅ LunarCrush v4: FUNCIONANDO (ou dados limitados)
 ✅ Error handling: FUNCIONANDO
+✅ DisplayManager: FUNCIONANDO
+✅ Sistema hierárquico: FUNCIONANDO
 
 📚 DOCUMENTAÇÃO COMPLETA:
 - /docs/README.md - Documentação técnica
@@ -133,7 +172,8 @@ print('Fear & Greed:', requests.get('https://api.alternative.me/fng/').status_co
 "
 
 ========================================
-    🚀 Crypto Analyzer v2024.2.0
-    Sistema Robusto e Confiável!
+    🚀 Crypto Analyzer v2024.2.1
+    Sistema Hierárquico Profissional!
+    Análises organizadas e estratégias integradas!
     Boas análises! 📊💰
 ========================================

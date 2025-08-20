@@ -1,8 +1,8 @@
-# 🤖 Agentes do Crypto Analyzer v2024.2.0
+# 🤖 Agentes do Crypto Analyzer v2024.2.1
 
 ## 📋 Visão Geral
 
-Esta pasta contém a documentação detalhada de cada agente (componente) do sistema Crypto Analyzer. Cada agente tem responsabilidades específicas e trabalha em conjunto para fornecer análises robustas e confiáveis.
+Esta pasta contém a documentação detalhada de cada agente (componente) do sistema Crypto Analyzer v2024.2.1. Inclui o novo **DisplayManager** - sistema hierárquico profissional que revoluciona a visualização de análises. Cada agente tem responsabilidades específicas e trabalha em conjunto para fornecer análises organizadas e estratégias de investimento.
 
 ## 🏗️ Arquitetura de Agentes
 
@@ -10,10 +10,11 @@ Esta pasta contém a documentação detalhada de cada agente (componente) do sis
 agents/
 ├── README.md           # Este arquivo
 ├── analyzer.md         # Motor de análise de 3 camadas  
+├── display_manager.md  # 🆕 Sistema hierárquico profissional
 ├── fetcher.md          # Coleta de dados robusta
 ├── social_analyzer.md  # Análise social avançada
 ├── interface.md        # Interface CLI rica
-├── config.md          # Configurações e constantes
+├── config.md           # Configurações e constantes
 └── setup.md           # Instalação e configuração
 ```
 
@@ -22,30 +23,55 @@ agents/
 ```mermaid
 graph TD
     A[main.py] --> B[analyzer.py]
+    A --> H[🆕 display_manager.py]
     A --> C[interface.py]
     B --> D[fetcher.py]
     B --> E[social_analyzer.py]
+    B --> H
     D --> F[config.py]
     E --> F
     C --> G[utils.py]
+    H --> I[Rich Console/Panels]
+    
+    style H fill:#e1f5fe
+    style H stroke:#01579b
 ```
 
-## 📊 Status dos Agentes (v2024.2.0)
+## 📊 Status dos Agentes (v2024.2.1)
 
 | Agente | Status | Características Principais |
 |---------|--------|---------------------------|
-| **analyzer.py** | ✅ Estável | Sistema 3 camadas, classificações corretas |
-| **fetcher.py** | 🔥 Aprimorado | Rate limiting inteligente, fallback chain |
-| **social_analyzer.py** | 🔥 Aprimorado | LunarCrush v4, estratégia tripla |
+| **🆕 display_manager.py** | 🌟 Novo | Sistema hierárquico, gestão de risco, estratégias |
+| **analyzer.py** | 🔥 Aprimorado | Dados expandidos para DisplayManager |
+| **fetcher.py** | ✅ Estável | Rate limiting inteligente, fallback chain |
+| **social_analyzer.py** | ✅ Estável | LunarCrush v4, estratégia tripla |
 | **interface.py** | ✅ Estável | Rich console, formatação avançada |
 | **config.py** | ✅ Estável | Configurações centralizadas |
 | **utils.py** | ✅ Estável | Utilitários e helpers |
 
-**Legenda**: ✅ Estável | 🔥 Recentemente Aprimorado | 🚧 Em Desenvolvimento
+**Legenda**: ✅ Estável | 🔥 Recentemente Aprimorado | 🌟 Funcionalidade Nova | 🚧 Em Desenvolvimento
 
-## 🚀 Novidades v2024.2.0
+## 🌟 Novidades v2024.2.1
 
-### **Agentes Aprimorados**
+### **🆕 Novo Agente: DisplayManager**
+
+#### **display_manager.py** 🌟
+- ✅ **Sistema Hierárquico**: 3 camadas + análises complementares
+- ✅ **Gestão de Risco**: Cálculo automático de posição e Risk/Reward  
+- ✅ **Níveis de Preço**: Suportes, resistências e estratégias por perfil
+- ✅ **Análise Técnica**: Momentum, indicadores e sinais integrados
+- ✅ **Detecção de Hype**: Score de hype e alertas de FOMO
+- ✅ **Layout Profissional**: Painéis organizados com Rich Console
+
+#### **analyzer.py** 🔥 (Aprimorado)
+- ✅ **Estrutura de Dados Expandida**: Compatível com DisplayManager
+- ✅ **Campos Obrigatórios**: decision, analysis, etc. garantidos
+- ✅ **Windows Compatibility**: Debug mode para evitar Unicode issues
+- ✅ **Backward Compatible**: Mantém compatibilidade total
+
+## 🚀 Funcionalidades Anteriores v2024.2.0
+
+### **Agentes Robustos**
 
 #### **fetcher.py** 🔥
 - ✅ Rate limiting inteligente (4s + jitter)

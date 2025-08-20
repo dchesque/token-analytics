@@ -1,8 +1,8 @@
-# 📚 Documentação Técnica - Crypto Analyzer v2024.2.0
+# 📚 Documentação Técnica - Crypto Analyzer v2024.2.1
 
 ## 🎯 Visão Geral
 
-O Crypto Analyzer é um sistema robusto de análise de criptomoedas que combina análise fundamental, técnica e social. Esta versão 2024.2.0 inclui importantes melhorias de estabilidade e confiabilidade das APIs.
+O Crypto Analyzer é um sistema avançado de análise de criptomoedas com **sistema hierárquico profissional** que combina análise fundamental, técnica e social. Esta versão 2024.2.1 introduz o **DisplayManager** - um sistema revolucionário de visualização organizada em camadas para decisões de investimento informadas.
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -13,24 +13,161 @@ crypto-analyzer/
 ├── src/
 │   ├── main.py              # Interface CLI principal
 │   ├── analyzer.py          # Motor de análise (3 camadas)
+│   ├── display_manager.py   # 🆕 Sistema hierárquico profissional
 │   ├── fetcher.py           # Coleta de dados robusta
 │   ├── social_analyzer.py   # Análise social avançada
 │   ├── config.py            # Configurações e constantes
 │   ├── utils.py             # Utilitários e helpers
 │   └── enhanced_features.py # Funcionalidades avançadas
+├── test_new_display.py      # 🆕 Testes do sistema hierárquico
 ├── docs/                    # Documentação técnica
 ├── agents/                  # Documentação dos agentes
 ├── data/                    # Cache e dados temporários
 └── reports/                 # Relatórios gerados
 ```
 
-### **Fluxo de Processamento**
+### **🆕 Fluxo de Processamento Hierárquico v2024.2.1**
 
 1. **Input Processing**: Recebe query do usuário (símbolo, nome, etc.)
 2. **Token Resolution**: Busca inteligente com mapeamento direto
-3. **Data Collection**: APIs com fallback automático
-4. **Analysis Engine**: Sistema de 3 camadas
-5. **Output Generation**: Formatação rica com Rich Console
+3. **Data Collection**: APIs com fallback automático e rate limiting inteligente
+4. **Analysis Engine**: Sistema de 3 camadas + análises complementares
+5. **🆕 DisplayManager**: Sistema hierárquico profissional de visualização
+6. **Output Generation**: Layout organizado em camadas com Rich Console
+
+### **🆕 DisplayManager - Sistema Hierárquico Profissional**
+
+O novo DisplayManager organiza informações em uma estrutura hierárquica clara:
+
+```python
+DisplayManager Architecture:
+├── _display_header()           # Header com informações do token
+├── CAMADA 1: _display_layer_1_elimination()
+│   ├── Critérios eliminatórios (Market Cap, Volume, Idade, Liquidez)
+│   └── Status: APROVADO/REJEITADO
+├── CAMADA 2: _display_layer_2_scoring()
+│   ├── Score final (0-10) com barra visual
+│   ├── Breakdown detalhado por critério
+│   └── Grade (A/B/C/D) baseada no score
+├── CAMADA 3: _display_layer_3_decision()
+│   ├── Decisão final (CONSIDERAR COMPRA/ESTUDAR MAIS/EVITAR)
+│   ├── Classificação de mercado (MAJOR, LARGE CAP, etc.)
+│   ├── Contexto Fear & Greed
+│   └── Pontos fortes e fracos
+├── ANÁLISES COMPLEMENTARES:
+│   ├── _display_technical_analysis()    # Momentum e indicadores
+│   ├── _display_price_levels_strategy() # Níveis e estratégias
+│   ├── _display_hype_detection()        # Detecção de hype
+│   └── _display_onchain_metrics()       # Métricas DeFi/On-chain
+└── _display_disclaimer()        # Disclaimer legal obrigatório
+```
+
+## 🆕 DisplayManager - Documentação Técnica
+
+### **Características Principais**
+
+1. **Hierarquia Clara**: Informações organizadas em 3 camadas principais + análises complementares
+2. **Visualização Profissional**: Layout com painéis, barras de progresso e cores
+3. **Gestão de Risco Integrada**: Cálculos automáticos de posição e estratégias
+4. **Modularidade**: Cada seção é independente e pode ser customizada
+
+### **Métodos Principais**
+
+```python
+class DisplayManager:
+    def display_complete_analysis(self, result: dict):
+        """Método principal - orquestra toda a exibição hierárquica"""
+        
+    def _display_layer_1_elimination(self, result):
+        """Camada 1: Critérios eliminatórios com feedback visual"""
+        
+    def _display_layer_2_scoring(self, result):
+        """Camada 2: Pontuação detalhada com barras de progresso"""
+        
+    def _display_layer_3_decision(self, result):
+        """Camada 3: Decisão final e classificação"""
+        
+    def _display_price_levels_strategy(self, result):
+        """Níveis de preço, estratégias e gestão de risco"""
+        
+    def _display_technical_analysis(self, result):
+        """Análise técnica com momentum e indicadores"""
+        
+    def _display_hype_detection(self, result):
+        """Detecção de hype e métricas sociais"""
+        
+    def _display_onchain_metrics(self, result):
+        """Métricas on-chain e DeFi (quando aplicável)"""
+```
+
+### **Campos de Dados Necessários**
+
+O DisplayManager espera uma estrutura de dados específica do analyzer:
+
+```python
+required_fields = {
+    # Campos obrigatórios básicos
+    'token': str,                    # Símbolo do token
+    'token_name': str,              # Nome do token
+    'passed_elimination': bool,      # Status da eliminatória
+    'score': float,                 # Score 0-10
+    'score_breakdown': dict,        # Breakdown detalhado
+    'classification_info': dict,    # Informações de classificação
+    'data': dict,                   # Dados base do token
+    
+    # Campos para análises complementares
+    'momentum_analysis': dict,      # Análise técnica
+    'market_context': dict,         # Fear & Greed, contexto
+    'social_metrics': dict,         # Métricas sociais (opcional)
+    'hype_analysis': dict,          # Detecção de hype (opcional)
+    'defi_metrics': dict,           # Métricas DeFi (opcional)
+    'messari_metrics': dict,        # Dados Messari (opcional)
+}
+```
+
+### **Algoritmos de Cálculo**
+
+#### **Tamanho de Posição**
+```python
+def _calculate_position_size(self, score):
+    if score >= 9: return "15-20"      # Excelente
+    elif score >= 8: return "12-15"    # Muito bom
+    elif score >= 7: return "10-12"    # Bom
+    elif score >= 6: return "8-10"     # Médio
+    elif score >= 5: return "5-8"      # Baixo
+    else: return "0-3"                 # Muito baixo
+```
+
+#### **Níveis de Preço**
+```python
+# Cálculo de suportes e resistências baseado em momentum
+resistance_major = current_price * 1.3
+resistance_med = current_price * 1.15
+resistance_minor = current_price * 1.07
+
+support_minor = current_price * 0.95
+support_med = current_price * 0.88
+support_major = current_price * 0.75
+```
+
+#### **Risk/Reward Ratio**
+```python
+risk = abs((current_price - support_med) / current_price * 100)
+reward = abs((resistance_minor - current_price) / current_price * 100)
+rr_ratio = reward / risk if risk > 0 else 0
+```
+
+### **Integração com Main.py**
+
+```python
+# Em main.py - integração transparente
+def display_enhanced_result(result):
+    display = DisplayManager()
+    display.display_complete_analysis(result)
+
+def display_result(result):
+    display_enhanced_result(result)  # Redirecionamento
+```
 
 ## 🔧 APIs e Integração
 

@@ -1,18 +1,37 @@
-# 🚀 Crypto Analyzer v2.0
+# 🚀 Crypto Analyzer v2024.2.1
 
-**Análise Inteligente de Criptomoedas com IA**
+**Sistema Hierárquico de Análise Profissional de Criptomoedas**
 
-Sistema completo de análise fundamental, técnica e social de tokens baseado em múltiplas fontes de dados e algoritmos de inteligência artificial.
+Sistema avançado de análise fundamental, técnica e social com **visualização hierárquica profissional** organizada em camadas claras para decisões de investimento informadas.
 
-## ⭐ Principais Características
+## ⭐ **NOVO: Sistema Hierárquico Profissional v2024.2.1**
 
-- **🎯 Sistema de 3 Camadas**: Eliminatória → Pontuação → Classificação
-- **👑 Classificações Crypto Corretas**: MAJOR, LARGE CAP, MID CAP, etc.
-- **📊 Análise Técnica de Momentum**: RSI, médias móveis, tendências
-- **🌡️ Contexto de Mercado**: Fear & Greed Index integrado
-- **🔍 APIs Gratuitas**: CoinGecko, Alternative.me - sem API keys
+### **🎯 Visualização em 3 Camadas Principais**
+- **Camada 1 - Eliminatória**: Critérios mínimos de viabilidade (Market Cap, Volume, Idade)
+- **Camada 2 - Pontuação**: Breakdown detalhado de score com barras visuais (0-10 pontos)
+- **Camada 3 - Decisão**: Classificação final e recomendação de investimento
+
+### **📊 Análises Complementares Avançadas**
+- **💹 Níveis de Preço e Estratégias**: Suportes, resistências, estratégias por perfil de risco
+- **📈 Análise Técnica**: Momentum, indicadores, sinais de entrada/saída
+- **🔥 Detecção de Hype**: Score de hype, sinais sociais, alertas de FOMO
+- **⛓️ Métricas On-Chain**: TVL, revenue, métricas DeFi (quando aplicável)
+
+### **⚖️ Gestão de Risco Integrada**
+- **Tamanho de Posição**: Cálculo automático baseado no score (5-20% do portfolio)
+- **Risk/Reward**: Ratios calculados dinamicamente com níveis de preço
+- **Estratégias DCA**: Dollar Cost Average personalizadas por token
+- **Ajustes por Mercado**: Fear & Greed Index integrado nas recomendações
+
+## 🚀 Características Principais
+
+- **🎯 Sistema Hierárquico Profissional**: Informações organizadas em camadas claras
+- **👑 Classificações Crypto Corretas**: MAJOR, LARGE CAP, MID CAP, MEME, DeFi, etc.
+- **💹 Estratégias de Trading**: Níveis técnicos, gestão de risco, posicionamento
+- **🌡️ Contexto de Mercado**: Fear & Greed Index com ajustes automáticos
+- **🔍 APIs Robustas**: Sistema de fallbacks automáticos, rate limiting inteligente
 - **💎 Métricas Especiais**: Bitcoin e Ethereum com análises customizadas
-- **📈 Interface CLI Rica**: Cores, emojis, progresso em tempo real
+- **📈 Interface Profissional**: Layout hierárquico, cores, visualizações claras
 
 ## 🚀 Início Rápido
 
@@ -47,42 +66,69 @@ python src/main.py --watch bitcoin 5
 python src/main.py
 ```
 
-## 📊 Sistema de Classificação
+## 📊 **NOVO: Sistema Hierárquico Profissional**
 
-### **👑 Terminologia Crypto Correta**
+### **🎯 Estrutura em 3 Camadas + Análises Complementares**
 
-| Classificação | Emoji | Descrição | Exemplos |
-|---------------|-------|-----------|----------|
-| **MAJOR** | 👑 | Bitcoin, Ethereum | BTC, ETH |
-| **LARGE CAP** | 💎 | Top 10 do mercado | BNB, SOL, XRP, ADA |
-| **MID CAP** | ⭐ | Projetos estabelecidos | MATIC, LINK, UNI |
-| **SMALL CAP** | 🔹 | Capitalização menor | Tokens rank 51-100 |
-| **MICRO CAP** | 🔸 | Projetos pequenos | Tokens rank 101-500 |
-| **NANO CAP** | ⚡ | Projetos muito pequenos | Tokens rank >500 |
-| **MEME COIN** | 🐕 | Tokens meme/comunidade | DOGE, SHIB, PEPE |
-| **STABLECOIN** | 💵 | Moedas estáveis | USDT, USDC, DAI |
-| **DEFI** | 🏦 | Tokens DeFi | AAVE, COMP, SUSHI |
-| **LAYER 2** | ⚡ | Soluções escalabilidade | ARB, OP, MATIC |
+```
+╔═══════════════ SISTEMA HIERÁRQUICO ═══════════════╗
+║                                                    ║
+║  🔸 CAMADA 1: ELIMINATÓRIA                        ║
+║     ├─ Market Cap > $1M                           ║
+║     ├─ Volume 24h > $100K                         ║
+║     ├─ Token existe há > 180 dias                 ║
+║     └─ Liquidez verificável                       ║
+║                                                    ║
+║  🔸 CAMADA 2: PONTUAÇÃO DETALHADA                 ║
+║     ├─ Market Position (0-2pts): Ranking/MCap     ║
+║     ├─ Liquidez (0-2pts): Volume/MCap ratio       ║
+║     ├─ Desenvolvimento (0-2pts): GitHub activity  ║
+║     ├─ Comunidade (0-2pts): Social metrics        ║
+║     └─ Performance (0-2pts): Price stability      ║
+║                                                    ║
+║  🔸 CAMADA 3: DECISÃO FINAL                       ║
+║     ├─ CONSIDERAR COMPRA (Score ≥8)               ║
+║     ├─ ESTUDAR MAIS (Score 5-7)                   ║
+║     └─ EVITAR (Score <5)                          ║
+║                                                    ║
+║ ════════ ANÁLISES COMPLEMENTARES ════════         ║
+║                                                    ║
+║  💹 NÍVEIS DE PREÇO E ESTRATÉGIAS                 ║
+║     ├─ Mapa de suportes e resistências            ║
+║     ├─ Estratégias por perfil (Comprador/Observer)║
+║     ├─ Risk/Reward ratios calculados              ║
+║     └─ Tamanho de posição sugerido               ║
+║                                                    ║
+║  📈 ANÁLISE TÉCNICA                               ║
+║     ├─ Momentum e tendência                       ║
+║     ├─ Indicadores (RSI, MA, Volume)              ║
+║     └─ Sinais técnicos detectados                 ║
+║                                                    ║
+║  🔥 DETECÇÃO DE HYPE                              ║
+║     ├─ Score de hype (0-100)                      ║
+║     ├─ Sinais sociais anômalos                    ║
+║     └─ Alertas de FOMO                            ║
+║                                                    ║
+║  ⛓️ MÉTRICAS ON-CHAIN (DeFi tokens)               ║
+║     ├─ TVL e MCap/TVL ratio                       ║
+║     ├─ Revenue 24h/7d                             ║
+║     └─ Métricas de uso                            ║
+║                                                    ║
+╚════════════════════════════════════════════════════╝
+```
 
-### **📈 Sistema de Pontuação (0-10)**
+### **👑 Classificações Crypto (Com Novo Sistema)**
 
-#### **Camada 1: Eliminatória** ❌✅
-- Market Cap > $1M
-- Volume 24h > $100K  
-- Token existe há > 180 dias
-- Liquidez verificável
-
-#### **Camada 2: Pontuação** 📊
-- **Market Cap/Ranking** (0-2 pontos): Estabelecimento no mercado
-- **Liquidez** (0-2 pontos): Volume/Market Cap ratio
-- **Desenvolvimento** (0-2 pontos): Atividade no GitHub
-- **Comunidade** (0-2 pontos): Métricas sociais
-- **Performance** (0-2 pontos): Estabilidade de preço
-
-#### **Camada 3: Contexto** 🌍
-- Fear & Greed Index
-- Análise de momentum técnico
-- Sentimento do mercado
+| Classificação | Descrição | Score Típico | Estratégia |
+|---------------|-----------|--------------|------------|
+| **MAJOR** | Bitcoin, Ethereum | 8-10 | 15-20% portfolio |
+| **LARGE CAP** | Top 10 estabelecidos | 7-9 | 10-15% portfolio |
+| **MID CAP** | Projetos sólidos | 5-8 | 8-12% portfolio |
+| **SMALL CAP** | Alto potencial | 4-7 | 5-10% portfolio |
+| **MICRO/NANO** | Especulativo | 2-6 | 0-5% portfolio |
+| **MEME COIN** | Comunidade/Hype | 1-4 | 0-3% portfolio |
+| **STABLECOIN** | Estabilidade | N/A | Reserva/DCA |
+| **DEFI** | Rendimento/Utilidade | 4-8 | 5-15% portfolio |
 
 ## 💎 Métricas Especiais para Majors
 
@@ -100,45 +146,189 @@ python src/main.py
 - Layer 2 solutions
 - Narrativa: Plataforma de smart contracts
 
-## 📊 Exemplos de Output
+## 📊 **NOVO: Exemplo de Output Hierárquico**
 
-### **Bitcoin - MAJOR** 👑
+### **🚀 Bitcoin - Sistema Completo v2024.2.1**
+
 ```
-┌────────── 📊 ANÁLISE: BITCOIN ──────────┐
-│                                          │
-│ 👑 CLASSIFICAÇÃO: MAJOR                  │
-│ 📝 Ativo principal do mercado crypto     │
-│ ⚖️ Nível de Risco: Estabelecido         │
-│ 📊 Score de Fundamentos: 9/10           │
-│ 🏆 Ranking: #1                          │
-│                                          │
-│ 💰 Market Cap: $1,350.0B                │
-│ 📈 Preço: $67,500.00                    │
-│                                          │
-│ 🔑 MÉTRICAS PRINCIPAIS:                 │
-│ • Dominância: 58.5%                     │
-│ • Halving a cada 4 anos                 │
-│ • Supply máximo: 21M BTC                │
-│ • Rede desde 2009                       │
-│                                          │
-└──────────────────────────────────────────┘
+═══════════════════════════════════════════════════════════════════
+                  BITCOIN (BTC) ANÁLISE COMPLETA
+═══════════════════════════════════════════════════════════════════
+
+═══════════════ SISTEMA DE 3 CAMADAS ═══════════════
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ✅ CAMADA 1: ELIMINATÓRIA                                       │
+│                                                                 │
+│ ✅ APROVADO - Passou em todos os critérios                     │
+│                                                                 │
+│ Critérios Atendidos:                                          │
+│   • Market Cap: $2.25T ✓ (mín: $1M)                           │
+│   • Volume 24h: $47.1B ✓ (mín: $100K)                         │
+│   • Idade: 5,847 dias ✓ (mín: 180 dias)                       │
+│   • Liquidez: 2.10% do MCap ✓ (mín: 0.1%)                     │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 📊 CAMADA 2: PONTUAÇÃO FUNDAMENTAL                             │
+│                                                                 │
+│ SCORE FINAL: 9/10 (Grade A)                                   │
+│ ████████████████████████████████████████▓▓▓▓▓ [90%]           │
+│                                                                 │
+│ Breakdown Detalhado:                                          │
+│                                                                 │
+│   Market Position    ██ 2.0/2.0                               │
+│   └─ Rank #1 • MCap $2.25T                                   │
+│                                                                 │
+│   Liquidez          ██ 2.0/2.0                               │
+│   └─ Volume $47.1B • Ratio 2.1%                              │
+│                                                                 │
+│   Desenvolvimento   ██ 2.0/2.0                               │
+│   └─ 50 commits/mês • 45000 stars                            │
+│                                                                 │
+│   Comunidade        ██ 2.0/2.0                               │
+│   └─ 5.2M Twitter • 4.8M Reddit                              │
+│                                                                 │
+│   Performance       █░ 1.0/2.0                               │
+│   └─ 30d: +12.5% • 7d: +3.2%                                 │
+│                                                                 │
+│ 💎 Fundamentos Excelentes - Token de alta qualidade          │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🎯 CAMADA 3: DECISÃO DE INVESTIMENTO                           │
+│                                                                 │
+│ 🟢 DECISÃO FINAL: CONSIDERAR COMPRA                           │
+│ Token apresenta fundamentos sólidos para investimento         │
+│                                                                 │
+│ Classificação de Mercado:                                     │
+│   • Categoria: MAJOR                                          │
+│   • Descrição: Ativo principal do mercado crypto              │
+│   • Nível de Risco: Estabelecido                              │
+│   • Qualidade: Fundamentos Excelentes                        │
+│                                                                 │
+│ Contexto de Mercado:                                          │
+│   • Fear & Greed: 68/100 😊 (Greed)                          │
+│   • Recomendação: Cautela com FOMO                           │
+│                                                                 │
+│ ✅ Pontos Fortes:                                             │
+│   • Top 1 em market cap global                               │
+│   • Excelente liquidez: $47.1B volume diário                 │
+│   • Maior comunidade do mercado crypto                       │
+│   • Token muito estabelecido (16.0 anos)                     │
+│                                                                 │
+│ ⚠️ Pontos de Atenção:                                         │
+│   • Alta volatilidade observada: +3.2% (7d)                  │
+└─────────────────────────────────────────────────────────────────┘
+
+═══════════ ANÁLISES COMPLEMENTARES ═══════════
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 💹 NÍVEIS DE PREÇO E ESTRATÉGIA                                │
+│                                                                 │
+│ 💰 PREÇO ATUAL: $112,782.00                                   │
+│ Variações: 24h [+2.1%], 7d [+3.2%], 30d [+12.5%]             │
+│                                                                 │
+│ ═══════════ MAPA DE PREÇOS ═══════════                        │
+│                                                                 │
+│ 🎯 RESISTÊNCIAS (Pontos de Realização):                       │
+│   R3: $146,615.00 ━━━ Resistência Major (+30.0%)             │
+│   R2: $129,699.00 ━━━ Resistência Média (+15.0%)             │
+│   R1: $120,676.00 ━━━ Resistência Local (+7.0%) 🔴           │
+│                                                                 │
+│   📍 $112,782.00 ━━━ PREÇO ATUAL ←─────                       │
+│                                                                 │
+│ 🛡️ SUPORTES (Pontos de Entrada):                              │
+│   S1: $107,143.00 ━━━ Suporte Local (-5.0%) 🟢               │
+│   S2: $99,248.00 ━━━ Suporte Médio (-12.0%)                  │
+│   S3: $84,587.00 ━━━ Suporte Major (-25.0%)                  │
+│                                                                 │
+│ ═══════════ ESTRATÉGIAS POR PERFIL ═══════════                │
+│                                                                 │
+│ 🟢 COMPRADOR (Score Alto: 9/10):                              │
+│   • Entrada Imediata: $112,782.00 (25% posição)              │
+│   • Entrada em Reteste: $107,143.00 (35% posição)            │
+│   • Entrada em Correção: $99,248.00 (40% posição)            │
+│   • Stop Loss: $84,587.00 (-25.0%)                           │
+│   • Alvo 1: $120,676.00 (+7.0%)                              │
+│   • Alvo 2: $129,699.00 (+15.0%)                             │
+│   • Alvo 3: $146,615.00 (+30.0%)                             │
+│                                                                 │
+│ ═══════════ GESTÃO DE RISCO ═══════════                       │
+│                                                                 │
+│ ⚖️ TAMANHO DE POSIÇÃO SUGERIDO:                               │
+│   • Com score 9/10 → 15-20% do portfolio crypto               │
+│   • Fear Extremo (68/100) → Pode aumentar +5%                 │
+│                                                                 │
+│ 📊 RISK/REWARD:                                               │
+│   • Risco: -12.0% (até stop)                                 │
+│   • Retorno: +7.0% (até alvo 1)                              │
+│   • Ratio: 1:0.6 (Aceitável)                                 │
+│                                                                 │
+│ 🔄 ESTRATÉGIA DCA (Dollar Cost Average):                      │
+│   • 30% na entrada inicial                                    │
+│   • 30% se cair -5%                                          │
+│   • 40% se cair -10%                                         │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 📈 ANÁLISE TÉCNICA                                             │
+│                                                                 │
+│ 📈 MOMENTUM: ALTA                                              │
+│                                                                 │
+│ Indicadores Técnicos:                                         │
+│   • RSI(14): 65 - Neutro                                      │
+│   • Preço vs MA(7): +2.3%                                     │
+│   • Preço vs MA(30): +8.1%                                    │
+│   • Posição no Range (90d): 78%                               │
+│   • Volume: +15% (📈 aumentando)                              │
+│                                                                 │
+│ Sinais Detectados:                                            │
+│   • Momentum positivo: +2.3% vs média 7d                     │
+│   • Tendência de alta: +8.1% vs média 30d                    │
+│   • Próximo da máxima: 78% do range 90d                      │
+│   • Volume crescente: +15%                                    │
+│                                                                 │
+│ Resumo Técnico:                                               │
+│   • ⚠️ Preço próximo da máxima recente - possível resistência │
+│   • 📈 Momentum técnico positivo observado                    │
+│   • 📊 Aumento significativo no volume (+15%)                 │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ⚠️ AVISO LEGAL IMPORTANTE                                       │
+│                                                                 │
+│ Esta análise é EXCLUSIVAMENTE EDUCACIONAL E INFORMATIVA.      │
+│                                                                 │
+│ NÃO CONSTITUI recomendação de investimento, consultoria        │
+│ financeira ou sugestão de compra/venda.                       │
+│                                                                 │
+│ RISCOS:                                                        │
+│ - Criptomoedas são ativos de ALTÍSSIMO RISCO                  │
+│ - Você pode perder TODO seu capital investido                 │
+│ - Mercado extremamente volátil e imprevisível                 │
+│ - Sujeito a manipulação e eventos inesperados                 │
+│                                                                 │
+│ RECOMENDAÇÕES:                                                 │
+│ - Sempre faça sua própria pesquisa (DYOR)                     │
+│ - Nunca invista mais do que pode perder                       │
+│ - Consulte um assessor financeiro profissional                │
+│ - Diversifique seus investimentos                             │
+│                                                                 │
+│ Análise gerada em: 20/08/2025 15:30:25                       │
+│ Fontes: CoinGecko, LunarCrush, DeFiLlama, Alternative.me      │
+│ Versão: Crypto Analyzer v2024.2.1                            │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### **Cardano - LARGE CAP** 💎
-```
-┌────────── 📊 ANÁLISE: CARDANO ──────────┐
-│                                          │
-│ 💎 CLASSIFICAÇÃO: LARGE CAP              │
-│ 📝 Top 10 do mercado                    │
-│ ⚖️ Nível de Risco: Baixo-Médio          │
-│ 📊 Score de Fundamentos: 7/10           │
-│ 🏆 Ranking: #8                          │
-│                                          │
-│ 💰 Market Cap: $18.2B                   │
-│ 📈 Preço: $0.52                         │
-│                                          │
-└──────────────────────────────────────────┘
-```
+### **🔥 Principais Melhorias v2024.2.1**
+
+- ✅ **Sistema hierárquico profissional** com 3 camadas + análises complementares
+- ✅ **Níveis de preço dinâmicos** com estratégias por perfil de risco
+- ✅ **Gestão de risco integrada** com tamanho de posição e Risk/Reward
+- ✅ **Análise técnica avançada** com indicadores e momentum
+- ✅ **Detecção de hype** para evitar FOMO e bolhas
+- ✅ **Layout profissional** organizado e fácil de ler
 
 ## 📁 Estrutura de Arquivos
 
