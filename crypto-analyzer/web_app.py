@@ -23,9 +23,10 @@ sys.path.append(str(Path(__file__).parent / 'src'))
 try:
     from analyzer import CryptoAnalyzer
     from display_manager import DisplayManager
-    from fetcher import CryptoFetcher
+    from fetcher import DataFetcher
     from social_analyzer import SocialAnalyzer
-    from config import Config
+    # Import configuration constants directly (no Config class needed)
+    import config
     # AI Integration imports
     from ai_openrouter_agent import create_ai_agent, get_ai_health
     from ai_config import AIConfig, AITier
@@ -52,9 +53,9 @@ CACHE_DURATION = int(os.environ.get('CACHE_DURATION', 300))  # 5 minutes
 
 # Initialize components (with error handling)
 try:
-    config = Config()
-    fetcher = CryptoFetcher(config)
-    social_analyzer = SocialAnalyzer(config)
+    # Initialize components directly (they create their own configurations)
+    fetcher = DataFetcher()
+    social_analyzer = SocialAnalyzer()
     
     # Initialize analyzer with AI support
     enable_ai = os.environ.get('ENABLE_AI_ANALYSIS', 'true').lower() == 'true'
@@ -76,7 +77,8 @@ try:
 except Exception as e:
     print(f"Warning: Could not initialize analysis components: {e}")
     COMPONENTS_LOADED = False
-    config = None
+    fetcher = None
+    social_analyzer = None
     analyzer = None
     display_manager = None
     ai_agent = None
