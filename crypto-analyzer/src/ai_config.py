@@ -95,16 +95,16 @@ class AIConfig:
             fallback_model="meta-llama/llama-3.1-70b-instruct"
         ),
         
-        "anthropic/claude-3.5-sonnet": ModelConfig(
-            name="anthropic/claude-3.5-sonnet",
-            display_name="Claude 3.5 Sonnet",
-            tier=ModelTier.ENTERPRISE,
-            cost_per_1m_tokens=3.0,
-            max_tokens=8192,
-            context_window=200000,
-            capabilities=["expert_analysis", "complex_reasoning", "comprehensive_reports"],
-            fallback_model="openai/gpt-4o-mini"
-        )
+        "deepseek/deepseek-chat-v3.1": ModelConfig(
+    name="deepseek/deepseek-chat-v3.1",
+    display_name="DeepSeek V3.1",
+    tier=ModelTier.ENTERPRISE,
+    cost_per_1m_tokens=0.20,  # ← CORRIGIR: Era 3.0, mas é 0.20
+    max_tokens=8192,
+    context_window=200000,
+    capabilities=["expert_analysis", "complex_reasoning", "comprehensive_reports"],
+    fallback_model="openai/gpt-4o-mini"
+)
     }
     
     # User tier configurations
