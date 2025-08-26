@@ -137,6 +137,7 @@ class CryptoAnalyzer {
 
     async analyzeToken(token) {
         try {
+            console.log(`Starting analysis for token: ${token}`);
             this.currentToken = token;
             this.showLoadingState(token);
             
@@ -146,6 +147,7 @@ class CryptoAnalyzer {
             const now = Date.now();
             
             if (cached && (now - cached.timestamp) < 300000) { // 5 minutes cache
+                console.log(`Using cached data for ${token}`);
                 this.displayResults(cached.data);
                 return;
             }
@@ -154,8 +156,11 @@ class CryptoAnalyzer {
             this.animateLoadingSteps();
             
             // Fetch data from API
+            console.log(`Fetching data from API for ${token}`);
             const response = await fetch(`/api/analyze/${encodeURIComponent(token)}`);
             const data = await response.json();
+            
+            console.log(`API response received:`, data);
             
             if (!response.ok || !data.success) {
                 throw new Error(data.error || 'Analysis failed');
@@ -220,10 +225,17 @@ class CryptoAnalyzer {
     }
 
     displayResults(data) {
-        // Hide loading, show results
-        document.getElementById('analysis-loading').style.display = 'none';
-        document.getElementById('results-content').style.display = 'block';
-        document.getElementById('error-state').style.display = 'none';
+        try {
+            console.log('Displaying results:', data);
+            
+            // Hide loading, show results
+            const loadingElement = document.getElementById('analysis-loading');
+            const resultsElement = document.getElementById('results-content');
+            const errorElement = document.getElementById('error-state');
+            
+            if (loadingElement) loadingElement.style.display = 'none';
+            if (resultsElement) resultsElement.style.display = 'block';
+            if (errorElement) errorElement.style.display = 'none';
         
         // Update token info
         this.updateTokenInfo(data);
@@ -245,53 +257,75 @@ class CryptoAnalyzer {
         
         // Update insights
         this.updateInsights(data);
+        
+        } catch (error) {
+            console.error('Error in displayResults:', error);
+            this.showErrorState('Error displaying results: ' + error.message);
+        }
     }
 
     updateTokenInfo(data) {
-        const tokenData = data.market_data;
+        const tokenData = data.data || data.market_data || data;
         if (!tokenData) return;
         
-        document.getElementById('token-name').textContent = tokenData.name || 'Unknown Token';
-        document.getElementById('token-symbol').textContent = (tokenData.symbol || '').toUpperCase();
+        const nameElement = document.getElementById('token-name');
+        const symbolElement = document.getElementById('token-symbol');
+        
+        if (nameElement) nameElement.textContent = tokenData.name || tokenData.token_name || 'Unknown Token';
+        if (symbolElement) symbolElement.textContent = (tokenData.symbol || tokenData.token || '').toUpperCase();
         
         // Update token logo if available
         const logo = document.getElementById('token-logo');
-        if (tokenData.image) {
-            logo.src = tokenData.image;
-            logo.alt = `${tokenData.name} logo`;
-            logo.style.display = 'block';
-        } else {
-            logo.style.display = 'none';
+        if (logo) {
+            if (tokenData.image) {
+                logo.src = tokenData.image;
+                logo.alt = `${tokenData.name} logo`;
+                logo.style.display = 'block';
+            } else {
+                logo.style.display = 'none';
+            }
         }
     }
 
     updatePriceInfo(data) {
-        const tokenData = data.market_data;
+        const tokenData = data.data || data.market_data || data;
         if (!tokenData) return;
         
-        const price = tokenData.current_price || 0;
-        const change24h = tokenData.price_change_percentage_24h || 0;
+        const price = tokenData.price || tokenData.current_price || 0;
+        const change24h = tokenData.price_change_24h || tokenData.price_change_percentage_24h || 0;
         
         // Current price
-        document.getElementById('current-price').textContent = this.formatCurrency(price);
+        const priceElement = document.getElementById('current-price');
+        if (priceElement) priceElement.textContent = this.formatCurrency(price);
         
         // Price change
         const changeElement = document.getElementById('price-change');
-        changeElement.textContent = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`;
-        changeElement.className = `price-change ${change24h >= 0 ? 'positive' : 'negative'}`;
+        if (changeElement) {
+            changeElement.textContent = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`;
+            changeElement.className = `price-change ${change24h >= 0 ? 'positive' : 'negative'}`;
+        }
         
         // 24h high/low
-        document.getElementById('high-24h').textContent = this.formatCurrency(tokenData.high_24h || 0);
-        document.getElementById('low-24h').textContent = this.formatCurrency(tokenData.low_24h || 0);
+        const highElement = document.getElementById('high-24h');
+        const lowElement = document.getElementById('low-24h');
+        if (highElement) highElement.textContent = this.formatCurrency(tokenData.high_24h || 0);
+        if (lowElement) lowElement.textContent = this.formatCurrency(tokenData.low_24h || 0);
         
         // Market cap and volume
-        document.getElementById('market-cap').textContent = this.formatLargeNumber(tokenData.market_cap || 0);
-        document.getElementById('volume-24h').textContent = this.formatLargeNumber(tokenData.total_volume || 0);
+        const marketCapElement = document.getElementById('market-cap');
+        const volumeElement = document.getElementById('volume-24h');
+        if (marketCapElement) marketCapElement.textContent = this.formatLargeNumber(tokenData.market_cap || 0);
+        if (volumeElement) volumeElement.textContent = this.formatLargeNumber(tokenData.volume || tokenData.total_volume || 0);
     }
 
     updateMarketMetrics(data) {
         const container = document.getElementById('market-metrics');
-        const tokenData = data.market_data;
+        if (!container) {
+            console.error('Market metrics container not found');
+            return;
+        }
+        
+        const tokenData = data.data || data.market_data || data;
         
         if (!tokenData) {
             container.innerHTML = '<p class="no-data">No market data available</p>';
@@ -397,7 +431,13 @@ class CryptoAnalyzer {
     }
 
     updateInsights(data) {
-        const container = document.getElementById('insights-list');
+        const container = document.getElementById('ai-insights');  // Corrigido: usar 'ai-insights' em vez de 'insights-list'
+        
+        if (!container) {
+            console.error('AI insights container not found');
+            return;
+        }
+        
         const insights = data.analysis?.key_insights || [];
         
         if (!insights.length) {
@@ -421,16 +461,26 @@ class CryptoAnalyzer {
     }
 
     showErrorState(message) {
-        document.getElementById('analysis-loading').style.display = 'none';
-        document.getElementById('results-content').style.display = 'none';
-        document.getElementById('error-state').style.display = 'block';
-        document.getElementById('error-message').textContent = message;
+        const loadingElement = document.getElementById('analysis-loading');
+        const resultsElement = document.getElementById('results-content');
+        const errorElement = document.getElementById('error-state');
+        const messageElement = document.getElementById('error-message');
+        
+        if (loadingElement) loadingElement.style.display = 'none';
+        if (resultsElement) resultsElement.style.display = 'none';
+        if (errorElement) errorElement.style.display = 'block';
+        if (messageElement) messageElement.textContent = message;
     }
 
     resetToSearch() {
-        document.getElementById('results-section').style.display = 'none';
-        document.getElementById('token-input').value = '';
-        document.getElementById('token-input').focus();
+        const resultsSection = document.getElementById('results-section');
+        const tokenInput = document.getElementById('token-input');
+        
+        if (resultsSection) resultsSection.style.display = 'none';
+        if (tokenInput) {
+            tokenInput.value = '';
+            tokenInput.focus();
+        }
     }
 
     // Theme management

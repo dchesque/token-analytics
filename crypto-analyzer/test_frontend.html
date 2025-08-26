@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend</title>
+</head>
+<body>
+    <h1>Test Crypto Analyzer JavaScript</h1>
+    <button onclick="testAnalyze()">Test Analyze Bitcoin</button>
+    <div id="results"></div>
+
+    <script>
+        async function testAnalyze() {
+            try {
+                console.log('Testing analyze...');
+                const response = await fetch('http://localhost:8000/api/analyze/bitcoin');
+                const data = await response.json();
+                console.log('Response:', data);
+                
+                if (data.success) {
+                    document.getElementById('results').innerHTML = `
+                        <h2>Success!</h2>
+                        <p>Token: ${data.token}</p>
+                        <p>Score: ${data.score}/10</p>
+                        <p>Decision: ${data.decision}</p>
+                        <p>Price: $${data.data?.price || 0}</p>
+                        <p>Market Cap: $${data.data?.market_cap || 0}</p>
+                    `;
+                } else {
+                    document.getElementById('results').innerHTML = `
+                        <h2>Error</h2>
+                        <p>${data.error}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('results').innerHTML = `
+                    <h2>JavaScript Error</h2>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+
+        // Test if getElementById works with ai-insights
+        document.addEventListener('DOMContentLoaded', function() {
+            const testDiv = document.createElement('div');
+            testDiv.id = 'ai-insights';
+            testDiv.innerHTML = 'AI Insights container exists';
+            document.body.appendChild(testDiv);
+
+            const container = document.getElementById('ai-insights');
+            if (container) {
+                console.log('ai-insights element found successfully');
+            } else {
+                console.error('ai-insights element NOT found');
+            }
+        });
+    </script>
+</body>
+</html>
