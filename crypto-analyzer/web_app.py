@@ -668,25 +668,30 @@ def api_analyze_master(token):
     5. Social sentiment
     6. Trading levels
     """
+    # Initialize safe result structure immediately
+    result = {
+        'token': token.upper(),
+        'timestamp': datetime.now().isoformat(),
+        'success': False,
+        'processing_time': 0,
+        'components': {
+            'fundamental': {'status': 'error', 'error': 'Not started'},
+            'technical': {'status': 'error', 'error': 'Not started'},
+            'ai_insights': {'status': 'error', 'error': 'Not started'},
+            'web_context': {'status': 'error', 'error': 'Not started'},
+            'trading_levels': {'status': 'error', 'error': 'Not started'},
+            'strategies': {'status': 'error', 'error': 'Not started'}
+        }
+    }
+    
     try:
         print(f"Starting master analysis for token: {token}")
         start_time = time.time()
         
-        # Initialize result structure
-        result = {
-            'token': token.upper(),
-            'timestamp': datetime.now().isoformat(),
-            'success': True,
-            'processing_time': 0,
-            'components': {
-                'fundamental': {'status': 'pending'},
-                'technical': {'status': 'pending'},
-                'ai_insights': {'status': 'pending'},
-                'web_context': {'status': 'pending'},
-                'trading_levels': {'status': 'pending'},
-                'strategies': {'status': 'pending'}
-            }
-        }
+        # Update result structure for successful start
+        result['success'] = True
+        for component in result['components']:
+            result['components'][component] = {'status': 'pending'}
         
         # PART 1: Base Fundamental Analysis
         try:
@@ -1028,20 +1033,67 @@ def api_analyze_master(token):
         import traceback
         print(f"MASTER ENDPOINT ERROR:\n{traceback.format_exc()}")
         
+        # Update the result structure with error info
+        result['success'] = False
+        result['error'] = str(e)
+        result['processing_time'] = time.time() - (start_time if 'start_time' in locals() else time.time())
+        
+        # Ensure all components have error status
+        for component_name in result['components']:
+            if result['components'][component_name].get('status') != 'completed':
+                result['components'][component_name] = {
+                    'status': 'error',
+                    'error': f'Failed due to master analysis error: {str(e)}'
+                }
+        
+        return jsonify(result), 500
+
+@app.route('/api/analyze/<token>/master-safe')
+def api_analyze_master_safe(token):
+    """Safe fallback endpoint that always returns valid JSON"""
+    try:
+        # Simple basic analysis without heavy components
+        if not analyzer:
+            raise Exception("Analyzer not available")
+            
+        basic_analysis = analyzer.analyze(token)
+        
+        return jsonify({
+            'success': True,
+            'token': token.upper(),
+            'timestamp': datetime.now().isoformat(),
+            'fundamental': basic_analysis or {'error': 'Analysis failed'},
+            'components': {
+                'fundamental': {'status': 'completed'},
+                'technical': {'status': 'disabled'},
+                'ai_insights': {'status': 'disabled'},
+                'web_context': {'status': 'disabled'},
+                'trading_levels': {'status': 'disabled'},
+                'strategies': {'status': 'disabled'}
+            },
+            'processing_time': 0.1,
+            'completion_rate': 16.7,
+            'note': 'Safe mode - limited features'
+        })
+        
+    except Exception as e:
         return jsonify({
             'success': False,
-            'token': token,
+            'token': token.upper(),
             'error': str(e),
+            'timestamp': datetime.now().isoformat(),
             'components': {
-                'fundamental': {'status': 'error'},
-                'technical': {'status': 'error'},  
-                'ai_insights': {'status': 'error'},
-                'web_context': {'status': 'error'},
-                'trading_levels': {'status': 'error'},
-                'strategies': {'status': 'error'}
+                'fundamental': {'status': 'error', 'error': str(e)},
+                'technical': {'status': 'disabled'},
+                'ai_insights': {'status': 'disabled'}, 
+                'web_context': {'status': 'disabled'},
+                'trading_levels': {'status': 'disabled'},
+                'strategies': {'status': 'disabled'}
             },
-            'timestamp': datetime.now().isoformat()
-        }), 500
+            'processing_time': 0.0,
+            'completion_rate': 0.0,
+            'note': 'Safe mode error fallback'
+        }), 200  # Return 200 to ensure JSON parsing works
 
 @app.route('/api/debug/trading-levels/<token>')
 def debug_trading_levels(token):
