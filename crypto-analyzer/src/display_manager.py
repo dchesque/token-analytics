@@ -710,3 +710,317 @@ Versão: Crypto Analyzer v2024.2.0[/dim]""".format(
             return "3-5"
         else:
             return "0-3"
+    
+    def display_hybrid_analysis(self, result: dict):
+        """Exibe resultado de análise híbrida (quantitativa + web research)"""
+        
+        token = result.get('token', 'Unknown').upper()
+        timestamp = result.get('timestamp', 'N/A')
+        confidence = result.get('confidence_level', 0)
+        processing_time = result.get('processing_time', 0)
+        
+        # Header especializado para análise híbrida
+        self.console.print(Panel(
+            f"[bold green]🤖 ANÁLISE HÍBRIDA COMPLETA: {token}[/bold green]\n"
+            f"[dim]Combinação de Análise Quantitativa + Contexto Web + IA[/dim]\n\n"
+            f"⏱️ Processado em: {processing_time:.2f}s\n"
+            f"🎯 Nível de Confiança: {confidence:.1%}\n"
+            f"📅 {timestamp}",
+            title="🤖 AI-Enhanced Analysis",
+            border_style="green",
+            padding=(1, 2)
+        ))
+        
+        # Se existe análise quantitativa tradicional, exibir primeiro
+        if result.get('quantitative_analysis'):
+            self.console.print("\n[bold cyan]═══════════ ANÁLISE QUANTITATIVA BASE ═══════════[/bold cyan]")
+            self.display_complete_analysis(result['quantitative_analysis'])
+        
+        # Seção de Web Research
+        if result.get('web_research'):
+            self._display_web_research_section(result['web_research'])
+        
+        # Insights Híbridos
+        if result.get('hybrid_insights'):
+            self._display_hybrid_insights(result['hybrid_insights'])
+        
+        # Contexto Score Adjustment
+        if result.get('contextual_score_adjustment'):
+            self._display_contextual_adjustment(result['contextual_score_adjustment'])
+        
+        # Recomendação Final Híbrida
+        if result.get('final_recommendation'):
+            self._display_hybrid_recommendation(result['final_recommendation'])
+        
+        # Insights Contextuais Adicionais
+        if result.get('contextual_insights'):
+            self._display_contextual_insights(result['contextual_insights'])
+        
+        # Footer híbrido
+        self.console.print(Panel(
+            "[bold green]🤖 Análise Híbrida Completada[/bold green]\n\n"
+            "[dim]Esta análise combina métricas quantitativas tradicionais com contexto web em tempo real,\n"
+            "análise de sentimento de múltiplas fontes e insights de IA para uma visão mais completa.[/dim]\n\n"
+            "⚠️ [yellow]Sempre faça sua própria pesquisa (DYOR) antes de investir[/yellow]",
+            title="Disclaimer - Análise Híbrida",
+            border_style="yellow"
+        ))
+    
+    def _display_web_research_section(self, web_research):
+        """Exibe seção de pesquisa web"""
+        
+        self.console.print("\n[bold blue]═══════════ WEB RESEARCH & CONTEXTO ═══════════[/bold blue]\n")
+        
+        if not web_research:
+            self.console.print("[yellow]⚠️ Pesquisa web não disponível[/yellow]")
+            return
+        
+        # Recent Developments
+        if hasattr(web_research, 'recent_developments') and web_research.recent_developments:
+            self.console.print(Panel(
+                "[bold]📰 Desenvolvimentos Recentes:[/bold]\n\n" +
+                '\n'.join([f"• {dev}" for dev in web_research.recent_developments[:5]]) +
+                (f"\n\n[dim]... e mais {len(web_research.recent_developments) - 5} desenvolvimentos[/dim]" 
+                 if len(web_research.recent_developments) > 5 else ""),
+                title="Recent Developments",
+                border_style="blue"
+            ))
+        
+        # Sentiment Analysis
+        if hasattr(web_research, 'sentiment_analysis') and web_research.sentiment_analysis:
+            sentiment = web_research.sentiment_analysis
+            sentiment_color = "green" if sentiment.get('overall_sentiment', '') == 'positive' else "red" if sentiment.get('overall_sentiment', '') == 'negative' else "yellow"
+            
+            self.console.print(Panel(
+                f"[bold]{sentiment_color}🎭 Análise de Sentimento Overall:[/{sentiment_color}][/bold]\n\n"
+                f"📊 Sentimento Geral: [{sentiment_color}]{sentiment.get('overall_sentiment', 'neutro').title()}[/{sentiment_color}]\n"
+                f"🔢 Score de Confiança: {sentiment.get('confidence_score', 0):.2f}/1.00\n"
+                f"📈 Menções Positivas: {sentiment.get('positive_mentions', 0)}\n"
+                f"📉 Menções Negativas: {sentiment.get('negative_mentions', 0)}\n"
+                f"⚖️ Menções Neutras: {sentiment.get('neutral_mentions', 0)}",
+                title="Sentiment Analysis",
+                border_style=sentiment_color
+            ))
+        
+        # Market Context
+        if hasattr(web_research, 'market_context') and web_research.market_context:
+            context = web_research.market_context
+            self.console.print(Panel(
+                f"[bold]🌐 Contexto de Mercado:[/bold]\n\n"
+                f"📊 Narrativa Principal: {context.get('primary_narrative', 'N/A')}\n"
+                f"🔥 Trending Topics: {', '.join(context.get('trending_topics', [])[:3])}\n"
+                f"⚡ Catalysts: {', '.join(context.get('upcoming_catalysts', [])[:3])}\n"
+                f"🏢 Adoção Institucional: {context.get('institutional_interest', 'N/A')}",
+                title="Market Context",
+                border_style="cyan"
+            ))
+    
+    def _display_hybrid_insights(self, insights):
+        """Exibe insights híbridos"""
+        
+        self.console.print("\n[bold magenta]═══════════ INSIGHTS HÍBRIDOS (IA) ═══════════[/bold magenta]\n")
+        
+        if not insights:
+            self.console.print("[yellow]⚠️ Insights híbridos não disponíveis[/yellow]")
+            return
+        
+        # Key Insights
+        if insights.get('key_insights'):
+            self.console.print(Panel(
+                "[bold]🔍 Key Insights:[/bold]\n\n" +
+                '\n'.join([f"• {insight}" for insight in insights['key_insights']]),
+                title="AI-Generated Insights",
+                border_style="magenta"
+            ))
+        
+        # Risk Factors
+        if insights.get('risk_factors'):
+            self.console.print(Panel(
+                "[bold red]⚠️ Fatores de Risco:[/bold red]\n\n" +
+                '\n'.join([f"• {risk}" for risk in insights['risk_factors']]),
+                title="Risk Assessment",
+                border_style="red"
+            ))
+        
+        # Opportunities
+        if insights.get('opportunities'):
+            self.console.print(Panel(
+                "[bold green]🚀 Oportunidades:[/bold green]\n\n" +
+                '\n'.join([f"• {opp}" for opp in insights['opportunities']]),
+                title="Opportunities",
+                border_style="green"
+            ))
+    
+    def _display_contextual_adjustment(self, adjustment):
+        """Exibe ajuste contextual do score"""
+        
+        if not adjustment:
+            return
+        
+        original_score = adjustment.get('original_score', 0)
+        adjusted_score = adjustment.get('adjusted_score', 0)
+        adjustment_reason = adjustment.get('reasoning', 'N/A')
+        
+        adjustment_diff = adjusted_score - original_score
+        color = "green" if adjustment_diff > 0 else "red" if adjustment_diff < 0 else "yellow"
+        
+        self.console.print(Panel(
+            f"[bold]🎯 Ajuste Contextual do Score:[/bold]\n\n"
+            f"📊 Score Quantitativo: {original_score:.1f}/10\n"
+            f"[{color}]🤖 Score Híbrido: {adjusted_score:.1f}/10 ({adjustment_diff:+.1f})[/{color}]\n\n"
+            f"[bold]Reasoning:[/bold]\n{adjustment_reason}",
+            title="Score Adjustment",
+            border_style=color
+        ))
+    
+    def _display_hybrid_recommendation(self, recommendation):
+        """Exibe recomendação final híbrida"""
+        
+        self.console.print("\n[bold gold1]═══════════ RECOMENDAÇÃO HÍBRIDA FINAL ═══════════[/bold gold1]\n")
+        
+        if not recommendation:
+            self.console.print("[yellow]⚠️ Recomendação não disponível[/yellow]")
+            return
+        
+        action = recommendation.get('action', 'HOLD')
+        confidence = recommendation.get('confidence', 0)
+        reasoning = recommendation.get('reasoning', 'N/A')
+        
+        # Cor baseada na ação
+        if action.upper() in ['BUY', 'STRONG BUY']:
+            color = "green"
+            emoji = "🟢"
+        elif action.upper() in ['SELL', 'STRONG SELL']:
+            color = "red"
+            emoji = "🔴"
+        else:  # HOLD
+            color = "yellow"
+            emoji = "🟡"
+        
+        self.console.print(Panel(
+            f"[bold {color}]{emoji} RECOMENDAÇÃO: {action.upper()}[/bold {color}]\n"
+            f"🎯 Confiança: {confidence:.1%}\n\n"
+            f"[bold]Reasoning Híbrido:[/bold]\n{reasoning}",
+            title="Final AI Recommendation",
+            border_style=color
+        ))
+    
+    def _display_contextual_insights(self, contextual_insights):
+        """Exibe insights contextuais adicionais"""
+        
+        if not contextual_insights:
+            return
+        
+        self.console.print("\n[bold purple]═══════════ INSIGHTS CONTEXTUAIS ═══════════[/bold purple]\n")
+        
+        # Market Phase Analysis
+        if contextual_insights.get('market_phase'):
+            phase = contextual_insights['market_phase']
+            self.console.print(Panel(
+                f"[bold]📊 Análise de Fase de Mercado:[/bold]\n\n"
+                f"🔄 Fase Atual: {phase.get('current_phase', 'N/A')}\n"
+                f"📈 Tendência: {phase.get('trend_direction', 'N/A')}\n"
+                f"⏰ Timing: {phase.get('timing_assessment', 'N/A')}",
+                title="Market Phase",
+                border_style="purple"
+            ))
+        
+        # Narrative Tracking
+        if contextual_insights.get('narrative_tracking'):
+            narrative = contextual_insights['narrative_tracking']
+            self.console.print(Panel(
+                f"[bold]📚 Tracking de Narrativa:[/bold]\n\n"
+                f"🎭 Narrativa Principal: {narrative.get('dominant_narrative', 'N/A')}\n"
+                f"🔥 Hot Topics: {', '.join(narrative.get('hot_topics', [])[:3])}\n"
+                f"📊 Momentum Score: {narrative.get('momentum_score', 0):.1f}/10",
+                title="Narrative Analysis",
+                border_style="blue"
+            ))
+    
+    def display_hybrid_comparison(self, results: list):
+        """Exibe comparação híbrida de múltiplos tokens"""
+        
+        if not results:
+            self.console.print("[red]❌ Nenhum resultado para comparar[/red]")
+            return
+        
+        self.console.print(Panel(
+            f"[bold green]🤖 COMPARAÇÃO HÍBRIDA: {len(results)} TOKENS[/bold green]\n"
+            f"[dim]Análise comparativa com contexto web e insights de IA[/dim]",
+            title="Hybrid Comparison Analysis",
+            border_style="green"
+        ))
+        
+        # Tabela de comparação
+        table = Table(title="📊 Comparação de Scores Híbridos")
+        table.add_column("Token", style="cyan", no_wrap=True)
+        table.add_column("Score Quant.", justify="center")
+        table.add_column("Score Híbrido", justify="center")
+        table.add_column("Ajuste", justify="center")
+        table.add_column("Recomendação", justify="center")
+        table.add_column("Confiança", justify="center")
+        table.add_column("Sentimento", justify="center")
+        
+        for result in results:
+            token = result.get('token', 'N/A').upper()
+            
+            # Scores
+            quant_analysis = result.get('quantitative_analysis', {})
+            quant_score = quant_analysis.get('score', 0)
+            
+            adjustment = result.get('contextual_score_adjustment', {})
+            hybrid_score = adjustment.get('adjusted_score', quant_score)
+            
+            score_diff = hybrid_score - quant_score
+            adjustment_str = f"{score_diff:+.1f}" if score_diff != 0 else "0.0"
+            
+            # Recomendação
+            recommendation = result.get('final_recommendation', {})
+            action = recommendation.get('action', 'HOLD')
+            confidence = recommendation.get('confidence', 0)
+            
+            # Sentimento
+            web_research = result.get('web_research')
+            sentiment = "N/A"
+            if web_research and hasattr(web_research, 'sentiment_analysis'):
+                sentiment_data = web_research.sentiment_analysis
+                if sentiment_data:
+                    sentiment = sentiment_data.get('overall_sentiment', 'N/A')
+            
+            # Cores para a tabela
+            score_color = "green" if hybrid_score >= 7 else "yellow" if hybrid_score >= 5 else "red"
+            adjustment_color = "green" if score_diff > 0 else "red" if score_diff < 0 else "white"
+            
+            table.add_row(
+                token,
+                f"{quant_score:.1f}",
+                f"[{score_color}]{hybrid_score:.1f}[/{score_color}]",
+                f"[{adjustment_color}]{adjustment_str}[/{adjustment_color}]",
+                action,
+                f"{confidence:.1%}",
+                sentiment.title() if sentiment != "N/A" else "N/A"
+            )
+        
+        self.console.print(table)
+        
+        # Resumo e ranking
+        sorted_results = sorted(results, 
+                              key=lambda x: x.get('contextual_score_adjustment', {}).get('adjusted_score', 0), 
+                              reverse=True)
+        
+        self.console.print(f"\n[bold gold1]🏆 RANKING HÍBRIDO:[/bold gold1]")
+        for i, result in enumerate(sorted_results[:3], 1):
+            token = result.get('token', 'N/A').upper()
+            score = result.get('contextual_score_adjustment', {}).get('adjusted_score', 0)
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉"
+            self.console.print(f"{medal} {i}º lugar: {token} - Score Híbrido: {score:.1f}")
+        
+        # Disclaimer para comparações
+        self.console.print(Panel(
+            "[yellow]⚠️ Aviso sobre Comparações Híbridas[/yellow]\n\n"
+            "Esta comparação combina análise quantitativa tradicional com contexto web em tempo real.\n"
+            "Os scores podem variar significativamente baseado em desenvolvimentos recentes,\n"
+            "sentimento de mercado e narrativas emergentes não capturadas por métricas tradicionais.\n\n"
+            "Sempre considere múltiplos fatores e faça sua própria pesquisa (DYOR).",
+            border_style="yellow"
+        ))
