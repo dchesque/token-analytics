@@ -1024,11 +1024,22 @@ def api_analyze_master(token):
         return jsonify(result)
         
     except Exception as e:
-        print(f"Master analysis error: {e}")
+        print(f"ERROR in master analysis: {str(e)}")
+        import traceback
+        print(f"MASTER ENDPOINT ERROR:\n{traceback.format_exc()}")
+        
         return jsonify({
             'success': False,
-            'error': str(e),
             'token': token,
+            'error': str(e),
+            'components': {
+                'fundamental': {'status': 'error'},
+                'technical': {'status': 'error'},  
+                'ai_insights': {'status': 'error'},
+                'web_context': {'status': 'error'},
+                'trading_levels': {'status': 'error'},
+                'strategies': {'status': 'error'}
+            },
             'timestamp': datetime.now().isoformat()
         }), 500
 
