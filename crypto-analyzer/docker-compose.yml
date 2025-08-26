@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  ai-token-preview:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-token-preview
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # Application mode
+      - WEB_MODE=${WEB_MODE:-true}
+      - PORT=${PORT:-8000}
+      - DEBUG=${DEBUG:-false}
+      
+      # Python settings
+      - PYTHONIOENCODING=utf-8
+      - PYTHONUNBUFFERED=1
+      
+      # API Keys (optional)
+      - LUNARCRUSH_API_KEY=${LUNARCRUSH_API_KEY:-}
+      - MESSARI_API_KEY=${MESSARI_API_KEY:-}
+      
+      # Cache settings
+      - CACHE_DURATION=${CACHE_DURATION:-300}
+      
+    # Port mapping
+    ports:
+      - "${PORT:-8000}:8000"
+      - "5000:5000"  # API port
+    
+    # Volumes for data persistence
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./.env:/app/.env:ro
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits (adjust based on VPS)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Network
+    networks:
+      - ai-token-preview-net
+
+# Networks
+networks:
+  ai-token-preview-net:
+    driver: bridge
+
+# Volumes (optional, for named volumes)
+volumes:
+  ai-token-preview-data:
+    driver: local
+  ai-token-preview-reports:
+    driver: local

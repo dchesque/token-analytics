@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0b90b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e6a805;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#gradient)" stroke="#2b3139" stroke-width="2"/>
+  
+  <!-- Chart line icon -->
+  <polyline points="20,70 35,55 50,45 65,35 80,25" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Data points -->
+  <circle cx="20" cy="70" r="2.5" fill="white"/>
+  <circle cx="35" cy="55" r="2.5" fill="white"/>
+  <circle cx="50" cy="45" r="2.5" fill="white"/>
+  <circle cx="65" cy="35" r="2.5" fill="white"/>
+  <circle cx="80" cy="25" r="2.5" fill="white"/>
+  
+  <!-- Bitcoin symbol -->
+  <text x="50" y="85" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="white">₿</text>
+</svg>

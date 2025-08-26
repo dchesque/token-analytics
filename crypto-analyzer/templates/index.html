@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered cryptocurrency analysis tool with real-time data and social metrics">
+    <meta name="keywords" content="crypto, cryptocurrency, analysis, trading, bitcoin, ethereum, defi">
+    <title>AI Token Preview v2.0 - Your AI Crypto Token Research</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" href="/static/favicon.ico">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>AI Token Preview</h2>
+            <p>Initializing...</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="app" class="app-container" style="opacity: 0;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="logo-text">
+                            <h1>AI Token Preview</h1>
+                            <span class="slogan">Your AI Crypto Token Research</span>
+                        </div>
+                        <span class="version">v2.0</span>
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    
+                    <div class="api-status">
+                        <div class="status-indicator" id="api-status">
+                            <i class="fas fa-circle"></i>
+                            <span>Checking APIs...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Search Section -->
+            <section class="search-section">
+                <div class="search-container">
+                    <div class="search-header">
+                        <h2>AI-Powered Token Analysis</h2>
+                        <p>Get comprehensive AI-driven analysis with market data, social metrics, and technical indicators</p>
+                    </div>
+                    
+                    <form class="search-form" id="analyze-form">
+                        <div class="search-input-group">
+                            <div class="search-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    id="token-input" 
+                                    class="search-input" 
+                                    placeholder="Enter token symbol or name (e.g., bitcoin, BTC, ethereum)"
+                                    autocomplete="off"
+                                    required
+                                >
+                                <button type="submit" class="search-button" id="analyze-btn">
+                                    <i class="fas fa-search"></i>
+                                    <span>Analyze</span>
+                                </button>
+                            </div>
+                            
+                            <div class="search-suggestions" id="search-suggestions"></div>
+                        </div>
+                        
+                        <div class="quick-tokens">
+                            <span class="quick-tokens-label">Quick access:</span>
+                            <button type="button" class="quick-token" data-token="bitcoin">Bitcoin</button>
+                            <button type="button" class="quick-token" data-token="ethereum">Ethereum</button>
+                            <button type="button" class="quick-token" data-token="cardano">Cardano</button>
+                            <button type="button" class="quick-token" data-token="solana">Solana</button>
+                            <button type="button" class="quick-token" data-token="polygon">Polygon</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="results-section" style="display: none;">
+                <div class="results-container">
+                    <!-- Loading State -->
+                    <div class="analysis-loading" id="analysis-loading">
+                        <div class="loading-card">
+                            <div class="loading-spinner-small"></div>
+                            <h3>Analyzing <span id="loading-token">Token</span>...</h3>
+                            <p>Fetching data from multiple sources</p>
+                            <div class="loading-steps">
+                                <div class="loading-step active" data-step="market">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <span>Market Data</span>
+                                </div>
+                                <div class="loading-step" data-step="social">
+                                    <i class="fas fa-users"></i>
+                                    <span>Social Metrics</span>
+                                </div>
+                                <div class="loading-step" data-step="analysis">
+                                    <i class="fas fa-brain"></i>
+                                    <span>Analysis</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Content -->
+                    <div class="results-content" id="results-content" style="display: none;">
+                        <div class="results-header">
+                            <div class="token-info">
+                                <img id="token-logo" src="" alt="Token Logo" class="token-logo">
+                                <div class="token-details">
+                                    <h2 id="token-name">Token Name</h2>
+                                    <span id="token-symbol" class="token-symbol">SYMBOL</span>
+                                </div>
+                            </div>
+                            
+                            <div class="results-actions">
+                                <button class="action-btn" id="export-report">
+                                    <i class="fas fa-download"></i>
+                                    Export Report
+                                </button>
+                                <button class="action-btn secondary" id="analyze-another">
+                                    <i class="fas fa-plus"></i>
+                                    Analyze Another
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Cards -->
+                        <div class="analysis-grid">
+                            <!-- Price Card -->
+                            <div class="analysis-card price-card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-dollar-sign"></i>Price Information</h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="price-main">
+                                        <span class="current-price" id="current-price">$0.00</span>
+                                        <span class="price-change" id="price-change">+0.00%</span>
+                                    </div>
+                                    <div class="price-details">
+                                        <div class="price-item">
+                                            <span class="label">24h High:</span>
+                                            <span class="value" id="high-24h">$0.00</span>
+                                        </div>
+                                        <div class="price-item">
+                                            <span class="label">24h Low:</span>
+                                            <span class="value" id="low-24h">$0.00</span>
+                                        </div>
+                                        <div class="price-item">
+                                            <span class="label">Market Cap:</span>
+                                            <span class="value" id="market-cap">$0</span>
+                                        </div>
+                                        <div class="price-item">
+                                            <span class="label">Volume 24h:</span>
+                                            <span class="value" id="volume-24h">$0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Market Metrics Card -->
+                            <div class="analysis-card metrics-card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-pie"></i>Market Metrics</h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="metrics-grid" id="market-metrics">
+                                        <!-- Dynamic content -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Social Metrics Card -->
+                            <div class="analysis-card social-card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-users"></i>Social Metrics</h3>
+                                    <span class="data-source">Powered by LunarCrush</span>
+                                </div>
+                                <div class="card-content">
+                                    <div class="social-metrics" id="social-metrics">
+                                        <p class="no-data">Configure LunarCrush API key for social metrics</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fear & Greed Card -->
+                            <div class="analysis-card fear-greed-card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-thermometer-half"></i>Market Sentiment</h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="fear-greed-indicator">
+                                        <div class="indicator-circle" id="fear-greed-circle">
+                                            <div class="indicator-value" id="fear-greed-value">--</div>
+                                            <div class="indicator-label" id="fear-greed-label">Loading...</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Technical Analysis Card -->
+                            <div class="analysis-card technical-card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-chart-line"></i>Technical Analysis</h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="technical-summary" id="technical-summary">
+                                        <!-- Dynamic content -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Key Insights Card -->
+                            <div class="analysis-card insights-card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-lightbulb"></i>Key Insights</h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="insights-list" id="insights-list">
+                                        <!-- Dynamic content -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div class="error-state" id="error-state" style="display: none;">
+                        <div class="error-content">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Analysis Failed</h3>
+                            <p id="error-message">Something went wrong. Please try again.</p>
+                            <button class="retry-btn" id="retry-btn">
+                                <i class="fas fa-redo"></i>
+                                Retry Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section class="history-section" id="history-section">
+                <div class="section-header">
+                    <h2>Recent Analysis</h2>
+                    <button class="clear-history" id="clear-history" title="Clear history">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                
+                <div class="history-list" id="history-list">
+                    <p class="no-history">No recent analysis found</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <p>&copy; 2025 AI Token Preview v2.0. Desenvolvido por dchesque.</p>
+                </div>
+                
+                <div class="footer-right">
+                    <a href="/api/status" class="footer-link" target="_blank">API Status</a>
+                    <a href="#" class="footer-link" id="about-link">About</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="about-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>About AI Token Preview v2.0</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>AI Token Preview is an advanced AI-powered cryptocurrency analysis tool that provides:</p>
+                <ul>
+                    <li>Real-time market data from CoinGecko</li>
+                    <li>Social sentiment analysis from LunarCrush</li>
+                    <li>Fear & Greed Index from Alternative.me</li>
+                    <li>DeFi protocol data from DeFiLlama</li>
+                    <li>AI-enhanced technical analysis and key insights</li>
+                </ul>
+                <p>Built with modern web technologies, AI capabilities, and containerized for easy deployment.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

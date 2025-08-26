@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  ai-token-preview:
+    image: ai-token-preview:latest
+    container_name: ai-token-preview-prod
+    restart: always
+    
+    # Production environment variables
+    environment:
+      # Application settings
+      - WEB_MODE=true
+      - PORT=8000
+      - DEBUG=false
+      - PRODUCTION=true
+      
+      # Python optimization
+      - PYTHONIOENCODING=utf-8
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONOPTIMIZE=2
+      
+      # API Keys (from secrets)
+      - LUNARCRUSH_API_KEY=${LUNARCRUSH_API_KEY}
+      - MESSARI_API_KEY=${MESSARI_API_KEY}
+      
+      # Performance settings
+      - CACHE_DURATION=600
+      - MAX_WORKERS=4
+      - REQUEST_TIMEOUT=30
+      
+      # Security
+      - SECURE_COOKIES=true
+      - SESSION_COOKIE_SECURE=true
+      - SESSION_COOKIE_HTTPONLY=true
+      - SESSION_COOKIE_SAMESITE=strict
+    
+    # Port mapping (internal only for reverse proxy)
+    expose:
+      - "8000"
+    
+    # Production volumes
+    volumes:
+      - ai-token-preview-data:/app/data
+      - ai-token-preview-reports:/app/reports
+      - ./templates:/app/templates:ro
+      - ./static:/app/static:ro
+    
+    # Enhanced health check for production
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health && curl -f http://localhost:8000/api/status || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    
+    # Production resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      
+      # Restart policy
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        labels: "service=ai-token-preview,environment=production"
+        env: "WEB_MODE,PORT"
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Read-only root filesystem for security
+    read_only: true
+    
+    # Temporary filesystems for writable areas
+    tmpfs:
+      - /tmp
+      - /var/tmp
+    
+    # Networks
+    networks:
+      - ai-token-preview-prod-net
+      - easypanel-net
+    
+    # Labels for EasyPanel
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai-token-preview.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.ai-token-preview.entrypoints=websecure"
+      - "traefik.http.routers.ai-token-preview.tls=true"
+      - "traefik.http.routers.ai-token-preview.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ai-token-preview.loadbalancer.server.port=8000"
+      - "traefik.http.middlewares.ai-token-preview-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.ai-token-preview-ratelimit.ratelimit.burst=200"
+      - "com.easypanel.app=ai-token-preview"
+      - "com.easypanel.version=2.0"
+
+# Networks
+networks:
+  ai-token-preview-prod-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-ai-token-preview
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+  
+  easypanel-net:
+    external: true
+    name: easypanel
+
+# Production volumes
+volumes:
+  ai-token-preview-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/ai-token-preview/data
+  
+  ai-token-preview-reports:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/ai-token-preview/reports

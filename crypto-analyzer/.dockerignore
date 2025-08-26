@@ -1,0 +1,101 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Project specific
+*.log
+*.pid
+*.seed
+*.pid.lock
+.env.local
+.env.development
+.env.test
+
+# Documentation
+*.md
+!README.md
+!README-Deploy.md
+docs/
+agents/
+
+# Tests
+test*.py
+tests/
+*_test.py
+
+# Build artifacts
+*.bat
+*.ps1
+*.sh
+!entrypoint.sh
+!deploy.sh
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Cache directories
+.cache/
+cache/
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Docker
+Dockerfile.*
+docker-compose.*.yml
+!docker-compose.yml
+!docker-compose.prod.yml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+jenkins/
+
+# Deployment files (keep only necessary)
+!easypanel-config.json
+!.env.production
+
+# Data directories (will be created in container)
+# Keep templates and static for development
+# data/
+# reports/

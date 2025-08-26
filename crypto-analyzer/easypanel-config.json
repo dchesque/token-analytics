@@ -1,0 +1,254 @@
+{
+  "name": "ai-token-preview",
+  "displayName": "AI Token Preview v2.0",
+  "description": "AI-powered cryptocurrency analysis tool with web interface and API",
+  "version": "2.0.0",
+  "type": "docker-compose",
+  "icon": "https://raw.githubusercontent.com/crypto-analyzer/assets/main/icon.png",
+  "categories": ["analytics", "cryptocurrency", "finance", "api"],
+  
+  "deployment": {
+    "compose": "docker-compose.prod.yml",
+    "method": "compose",
+    "buildArgs": {
+      "BUILDKIT_INLINE_CACHE": "1"
+    }
+  },
+  
+  "environment": {
+    "required": [
+      {
+        "name": "WEB_MODE",
+        "label": "Web Mode",
+        "description": "Enable web interface (required for EasyPanel)",
+        "type": "boolean",
+        "default": "true",
+        "immutable": true
+      },
+      {
+        "name": "PORT",
+        "label": "Application Port",
+        "description": "Port for web interface",
+        "type": "number",
+        "default": "8000",
+        "validation": "^[0-9]{4,5}$"
+      }
+    ],
+    "optional": [
+      {
+        "name": "LUNARCRUSH_API_KEY",
+        "label": "LunarCrush API Key",
+        "description": "API key for social metrics (get from lunarcrush.com/developers)",
+        "type": "password",
+        "placeholder": "Enter your LunarCrush API key"
+      },
+      {
+        "name": "MESSARI_API_KEY",
+        "label": "Messari API Key",
+        "description": "API key for enhanced data (optional)",
+        "type": "password",
+        "placeholder": "Enter your Messari API key"
+      },
+      {
+        "name": "DEBUG",
+        "label": "Debug Mode",
+        "description": "Enable debug logging",
+        "type": "boolean",
+        "default": "false"
+      },
+      {
+        "name": "CACHE_DURATION",
+        "label": "Cache Duration",
+        "description": "Cache duration in seconds",
+        "type": "number",
+        "default": "600",
+        "min": 60,
+        "max": 3600
+      },
+      {
+        "name": "MAX_WORKERS",
+        "label": "Max Workers",
+        "description": "Maximum number of worker processes",
+        "type": "number",
+        "default": "4",
+        "min": 1,
+        "max": 16
+      }
+    ]
+  },
+  
+  "volumes": [
+    {
+      "name": "data",
+      "path": "/app/data",
+      "description": "Application data and cache",
+      "size": "1Gi",
+      "type": "persistent"
+    },
+    {
+      "name": "reports",
+      "path": "/app/reports",
+      "description": "Generated analysis reports",
+      "size": "500Mi",
+      "type": "persistent"
+    }
+  ],
+  
+  "ports": [
+    {
+      "name": "web",
+      "port": 8000,
+      "protocol": "http",
+      "expose": true,
+      "description": "Web interface and API"
+    }
+  ],
+  
+  "domains": [
+    {
+      "name": "primary",
+      "type": "subdomain",
+      "ssl": true,
+      "default": "ai-token-preview"
+    }
+  ],
+  
+  "health": {
+    "endpoint": "/health",
+    "interval": 60,
+    "timeout": 10,
+    "retries": 3,
+    "startPeriod": 60
+  },
+  
+  "resources": {
+    "limits": {
+      "memory": "1024Mi",
+      "cpu": "2000m"
+    },
+    "requests": {
+      "memory": "256Mi",
+      "cpu": "500m"
+    }
+  },
+  
+  "scaling": {
+    "enabled": false,
+    "min": 1,
+    "max": 1,
+    "targetCPU": 80,
+    "targetMemory": 80
+  },
+  
+  "monitoring": {
+    "enabled": true,
+    "metrics": [
+      "cpu_usage",
+      "memory_usage",
+      "request_count",
+      "response_time",
+      "error_rate"
+    ],
+    "logs": {
+      "level": "info",
+      "format": "json",
+      "retention": "7d"
+    }
+  },
+  
+  "backup": {
+    "enabled": true,
+    "schedule": "0 2 * * *",
+    "volumes": ["data", "reports"],
+    "retention": 7
+  },
+  
+  "networking": {
+    "ingress": {
+      "enabled": true,
+      "className": "traefik",
+      "annotations": {
+        "traefik.ingress.kubernetes.io/router.tls": "true",
+        "traefik.ingress.kubernetes.io/router.middlewares": "default-ratelimit@kubernetescrd"
+      }
+    }
+  },
+  
+  "features": {
+    "api": {
+      "enabled": true,
+      "rateLimit": {
+        "enabled": true,
+        "requests": 100,
+        "period": "1m"
+      },
+      "cors": {
+        "enabled": true,
+        "origins": ["*"]
+      }
+    },
+    "ui": {
+      "enabled": true,
+      "theme": "dark",
+      "responsive": true
+    }
+  },
+  
+  "commands": {
+    "start": "python web_app.py",
+    "cli": "python src/main.py",
+    "test": "python healthcheck.py",
+    "shell": "/bin/bash"
+  },
+  
+  "labels": {
+    "app": "ai-token-preview",
+    "version": "2.0.0",
+    "maintainer": "dchesque",
+    "environment": "production"
+  },
+  
+  "metadata": {
+    "author": "dchesque",
+    "license": "MIT",
+    "repository": "https://github.com/dchesque/ai-token-preview",
+    "documentation": "https://docs.ai-token-preview.com",
+    "support": "support@ai-token-preview.com"
+  },
+  
+  "hooks": {
+    "preInstall": [
+      "echo 'Installing AI Token Preview v2.0...'",
+      "mkdir -p /app/data /app/reports"
+    ],
+    "postInstall": [
+      "echo 'AI Token Preview installed successfully!'",
+      "echo 'Access the web interface at your configured domain'"
+    ],
+    "preUpgrade": [
+      "echo 'Backing up data...'",
+      "cp -r /app/data /app/data.backup"
+    ],
+    "postUpgrade": [
+      "echo 'Upgrade completed!'",
+      "rm -rf /app/data.backup"
+    ]
+  },
+  
+  "troubleshooting": {
+    "commonIssues": [
+      {
+        "issue": "Web interface not accessible",
+        "solution": "Check if WEB_MODE=true and PORT is correctly configured"
+      },
+      {
+        "issue": "API rate limits",
+        "solution": "Configure API keys for better rate limits"
+      },
+      {
+        "issue": "High memory usage",
+        "solution": "Adjust CACHE_DURATION and MAX_WORKERS settings"
+      }
+    ]
+  }
+}
