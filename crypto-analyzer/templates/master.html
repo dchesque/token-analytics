@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete crypto analysis with AI insights, technical analysis, and trading strategies">
+    <title>Master Analysis - AI Token Preview v2.0</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        .master-tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            margin-bottom: 0;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .tab-button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+            background: var(--accent-light);
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0 var(--border-radius) var(--border-radius) var(--border-radius);
+            padding: 2rem;
+            min-height: 400px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .master-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .overview-card {
+            background: var(--gradient-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .overview-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .overview-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .formatted-report {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        .trading-levels-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .trading-levels-table th,
+        .trading-levels-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .trading-levels-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+        }
+
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .strategy-card {
+            background: var(--gradient-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+        }
+
+        .strategy-card h4 {
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .component-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--border-radius-small);
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .component-status.completed {
+            background: var(--success-light);
+            color: var(--success-color);
+        }
+
+        .component-status.fallback {
+            background: var(--warning-light);
+            color: var(--warning-color);
+        }
+
+        .component-status.error {
+            background: var(--error-light);
+            color: var(--error-color);
+        }
+    </style>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Master Analysis</h2>
+            <p>Running complete AI-powered analysis...</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="app" class="app-container" style="opacity: 0;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="logo-text">
+                            <h1>Master Analysis</h1>
+                            <span class="slogan">Complete AI-Powered Token Research</span>
+                        </div>
+                        <span class="version">v2.0</span>
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    
+                    <a href="/" class="action-btn secondary">
+                        <i class="fas fa-home"></i>
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Search Section -->
+            <section class="search-section">
+                <div class="search-container">
+                    <div class="search-header">
+                        <h2>Master Token Analysis</h2>
+                        <p>Complete analysis with AI insights, technical indicators, trading levels, and personalized strategies</p>
+                    </div>
+                    
+                    <form class="search-form" id="master-analyze-form">
+                        <div class="search-input-group">
+                            <div class="search-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    id="master-token-input" 
+                                    class="search-input" 
+                                    placeholder="Enter token symbol or name (e.g., bitcoin, BTC, ethereum)"
+                                    autocomplete="off"
+                                    required
+                                >
+                                <button type="submit" class="search-button" id="master-analyze-btn">
+                                    <i class="fas fa-rocket"></i>
+                                    <span>Master Analysis</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="quick-tokens">
+                            <span class="quick-tokens-label">Quick access:</span>
+                            <button type="button" class="quick-token" data-token="bitcoin">Bitcoin</button>
+                            <button type="button" class="quick-token" data-token="ethereum">Ethereum</button>
+                            <button type="button" class="quick-token" data-token="solana">Solana</button>
+                            <button type="button" class="quick-token" data-token="cardano">Cardano</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Master Results Section -->
+            <section class="results-section" id="master-results-section" style="display: none;">
+                <div class="results-container">
+                    <!-- Loading State -->
+                    <div class="analysis-loading" id="master-analysis-loading">
+                        <div class="loading-card">
+                            <div class="loading-spinner-small"></div>
+                            <h3>Master Analysis in Progress...</h3>
+                            <p>Processing comprehensive analysis with AI</p>
+                            <div id="progress-info">
+                                <p>Components: <span id="completed-components">0</span>/<span id="total-components">6</span></p>
+                                <p>Completion: <span id="completion-rate">0%</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Content -->
+                    <div class="results-content" id="master-results-content" style="display: none;">
+                        <!-- Overview Cards -->
+                        <div class="master-overview" id="master-overview">
+                            <!-- Overview cards will be populated here -->
+                        </div>
+
+                        <!-- Tab Navigation -->
+                        <div class="master-tabs">
+                            <button class="tab-button active" data-tab="overview">Overview</button>
+                            <button class="tab-button" data-tab="fundamental">Fundamental</button>
+                            <button class="tab-button" data-tab="technical">Technical</button>
+                            <button class="tab-button" data-tab="trading">Trading Levels</button>
+                            <button class="tab-button" data-tab="ai-insights">AI Insights</button>
+                            <button class="tab-button" data-tab="strategies">Strategies</button>
+                            <button class="tab-button" data-tab="report">Full Report</button>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content active" id="overview-tab">
+                            <h3>Analysis Overview</h3>
+                            <div id="overview-content">
+                                <!-- Overview content will be populated here -->
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="fundamental-tab">
+                            <h3>Fundamental Analysis</h3>
+                            <div id="fundamental-content">
+                                <!-- Fundamental analysis content -->
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="technical-tab">
+                            <h3>Technical Analysis</h3>
+                            <div id="technical-content">
+                                <!-- Technical analysis content -->
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="trading-tab">
+                            <h3>Trading Levels & Entry Points</h3>
+                            <div id="trading-content">
+                                <!-- Trading levels content -->
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="ai-insights-tab">
+                            <h3>AI-Powered Insights</h3>
+                            <div id="ai-insights-content">
+                                <!-- AI insights content -->
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="strategies-tab">
+                            <h3>Personalized Trading Strategies</h3>
+                            <div id="strategies-content">
+                                <!-- Strategies content -->
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="report-tab">
+                            <h3>Complete Formatted Report</h3>
+                            <div class="formatted-report" id="formatted-report-content">
+                                <!-- Formatted report content -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div class="error-state" id="master-error-state" style="display: none;">
+                        <div class="error-content">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Master Analysis Failed</h3>
+                            <p id="master-error-message">Something went wrong. Please try again.</p>
+                            <button class="retry-btn" id="master-retry-btn">
+                                <i class="fas fa-redo"></i>
+                                Retry Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <p>&copy; 2025 AI Token Preview v2.0 - Master Analysis. Desenvolvido por dchesque.</p>
+                </div>
+                
+                <div class="footer-right">
+                    <a href="/api/status" class="footer-link" target="_blank">API Status</a>
+                    <a href="/" class="footer-link">Standard Analysis</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        class MasterAnalyzer {
+            constructor() {
+                this.init();
+                this.bindEvents();
+                this.currentToken = null;
+            }
+
+            init() {
+                // Hide loading screen and show app
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.opacity = '0';
+                    document.getElementById('app').style.opacity = '1';
+                    
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                    }, 300);
+                }, 1000);
+
+                // Initialize theme
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                this.updateThemeIcon(savedTheme);
+                
+                // Set focus on search input
+                document.getElementById('master-token-input').focus();
+            }
+
+            bindEvents() {
+                // Search form submission
+                document.getElementById('master-analyze-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleMasterAnalyze();
+                });
+
+                // Quick token buttons
+                document.querySelectorAll('.quick-token').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const token = btn.dataset.token;
+                        document.getElementById('master-token-input').value = token;
+                        this.analyzeMasterToken(token);
+                    });
+                });
+
+                // Theme toggle
+                document.getElementById('theme-toggle').addEventListener('click', () => {
+                    this.toggleTheme();
+                });
+
+                // Tab switching
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.switchTab(btn.dataset.tab);
+                    });
+                });
+
+                // Retry button
+                document.getElementById('master-retry-btn').addEventListener('click', () => {
+                    this.handleMasterAnalyze();
+                });
+            }
+
+            handleMasterAnalyze() {
+                const tokenInput = document.getElementById('master-token-input');
+                const token = tokenInput.value.trim();
+                
+                if (!token) {
+                    alert('Please enter a token name or symbol');
+                    return;
+                }
+                
+                this.analyzeMasterToken(token);
+            }
+
+            async analyzeMasterToken(token) {
+                try {
+                    console.log(`Starting master analysis for token: ${token}`);
+                    this.currentToken = token;
+                    this.showLoadingState(token);
+                    
+                    // Fetch data from master API
+                    const response = await fetch(`/api/analyze/${encodeURIComponent(token)}/master`);
+                    const data = await response.json();
+                    
+                    console.log('Master API response:', data);
+                    
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || 'Master analysis failed');
+                    }
+                    
+                    this.displayMasterResults(data);
+                    
+                } catch (error) {
+                    console.error('Master analysis error:', error);
+                    this.showErrorState(error.message);
+                }
+            }
+
+            showLoadingState(token) {
+                document.getElementById('master-results-section').style.display = 'block';
+                document.getElementById('master-analysis-loading').style.display = 'block';
+                document.getElementById('master-results-content').style.display = 'none';
+                document.getElementById('master-error-state').style.display = 'none';
+                
+                document.getElementById('master-results-section').scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+
+            displayMasterResults(data) {
+                // Hide loading, show results
+                document.getElementById('master-analysis-loading').style.display = 'none';
+                document.getElementById('master-results-content').style.display = 'block';
+                document.getElementById('master-error-state').style.display = 'none';
+
+                // Update overview cards
+                this.updateOverviewCards(data);
+                
+                // Update tab contents
+                this.updateFundamentalTab(data.fundamental);
+                this.updateTechnicalTab(data.technical);
+                this.updateTradingTab(data.trading_levels);
+                this.updateAIInsightsTab(data.ai_insights);
+                this.updateStrategiesTab(data.strategies);
+                this.updateReportTab(data.formatted_report);
+                this.updateOverviewTab(data);
+            }
+
+            updateOverviewCards(data) {
+                const container = document.getElementById('master-overview');
+                const score = data.fundamental?.three_layers?.score || 0;
+                const completionRate = data.completion_rate || 0;
+                const processingTime = data.processing_time || 0;
+                const classification = data.fundamental?.classification || 'Unknown';
+                
+                container.innerHTML = `
+                    <div class="overview-card">
+                        <span class="overview-value">${score}/10</span>
+                        <span class="overview-label">Overall Score</span>
+                    </div>
+                    <div class="overview-card">
+                        <span class="overview-value">${classification}</span>
+                        <span class="overview-label">Classification</span>
+                    </div>
+                    <div class="overview-card">
+                        <span class="overview-value">${completionRate}%</span>
+                        <span class="overview-label">Completion Rate</span>
+                    </div>
+                    <div class="overview-card">
+                        <span class="overview-value">${processingTime}s</span>
+                        <span class="overview-label">Processing Time</span>
+                    </div>
+                `;
+            }
+
+            updateOverviewTab(data) {
+                const container = document.getElementById('overview-content');
+                const components = data.components || {};
+                
+                let componentStatus = '';
+                Object.entries(components).forEach(([name, status]) => {
+                    const statusClass = status.status || 'unknown';
+                    componentStatus += `
+                        <p><strong>${name.replace('_', ' ').toUpperCase()}:</strong> 
+                        <span class="component-status ${statusClass}">${statusClass}</span></p>
+                    `;
+                });
+                
+                container.innerHTML = `
+                    <h4>Analysis Components Status</h4>
+                    ${componentStatus}
+                    <h4>Key Metrics</h4>
+                    <p><strong>Token:</strong> ${data.token}</p>
+                    <p><strong>Processing Time:</strong> ${data.processing_time}s</p>
+                    <p><strong>Completion Rate:</strong> ${data.completion_rate}%</p>
+                    <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                `;
+            }
+
+            updateFundamentalTab(fundamental) {
+                const container = document.getElementById('fundamental-content');
+                if (!fundamental) {
+                    container.innerHTML = '<p>Fundamental analysis data not available</p>';
+                    return;
+                }
+                
+                const threeLayer = fundamental.three_layers || {};
+                const strengths = fundamental.strengths || [];
+                const risks = fundamental.risks || [];
+                
+                container.innerHTML = `
+                    <h4>Classification: ${fundamental.classification}</h4>
+                    <p><strong>Score:</strong> ${threeLayer.score}/10</p>
+                    <p><strong>Decision:</strong> ${threeLayer.decision}</p>
+                    <p><strong>Market Cap:</strong> $${(threeLayer.market_cap || 0).toLocaleString()}</p>
+                    <p><strong>Current Price:</strong> $${threeLayer.price || 0}</p>
+                    
+                    <h4>Strengths</h4>
+                    <ul>
+                        ${strengths.map(s => `<li>${s}</li>`).join('')}
+                    </ul>
+                    
+                    ${risks.length > 0 ? `
+                        <h4>Risks</h4>
+                        <ul>
+                            ${risks.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                `;
+            }
+
+            updateTechnicalTab(technical) {
+                const container = document.getElementById('technical-content');
+                if (!technical) {
+                    container.innerHTML = '<p>Technical analysis data not available</p>';
+                    return;
+                }
+                
+                const indicators = technical.indicators || {};
+                const patterns = technical.patterns || [];
+                
+                container.innerHTML = `
+                    <h4>Technical Indicators</h4>
+                    <p><strong>Momentum:</strong> ${technical.momentum}</p>
+                    <p><strong>Fear & Greed Index:</strong> ${indicators.fear_greed || 0}</p>
+                    <p><strong>24h Price Change:</strong> ${indicators.price_change_24h || 0}%</p>
+                    <p><strong>7d Price Change:</strong> ${indicators.price_change_7d || 0}%</p>
+                    
+                    <h4>Chart Patterns</h4>
+                    <ul>
+                        ${patterns.map(p => `<li>${p}</li>`).join('')}
+                    </ul>
+                `;
+            }
+
+            updateTradingTab(tradingLevels) {
+                const container = document.getElementById('trading-content');
+                if (!tradingLevels) {
+                    container.innerHTML = '<p>Trading levels data not available</p>';
+                    return;
+                }
+                
+                const entries = tradingLevels.entries || [];
+                const exits = tradingLevels.exits || [];
+                const stopLosses = tradingLevels.stop_losses || [];
+                
+                container.innerHTML = `
+                    <h4>Entry Levels</h4>
+                    <table class="trading-levels-table">
+                        <thead>
+                            <tr>
+                                <th>Price</th>
+                                <th>Size</th>
+                                <th>Confidence</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${entries.map(entry => `
+                                <tr>
+                                    <td>$${entry.price}</td>
+                                    <td>${entry.size}</td>
+                                    <td>${entry.confidence}%</td>
+                                    <td>${entry.reason}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <h4>Exit Targets</h4>
+                    <table class="trading-levels-table">
+                        <thead>
+                            <tr>
+                                <th>Price</th>
+                                <th>Take Profit</th>
+                                <th>Probability</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${exits.map(exit => `
+                                <tr>
+                                    <td>$${exit.price}</td>
+                                    <td>${exit.take}</td>
+                                    <td>${exit.probability}%</td>
+                                    <td>${exit.reason}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <h4>Stop Losses</h4>
+                    <table class="trading-levels-table">
+                        <thead>
+                            <tr>
+                                <th>Price</th>
+                                <th>Type</th>
+                                <th>Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${stopLosses.map(stop => `
+                                <tr>
+                                    <td>$${stop.price}</td>
+                                    <td>${stop.type}</td>
+                                    <td>${stop.risk}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            updateAIInsightsTab(aiInsights) {
+                const container = document.getElementById('ai-insights-content');
+                if (!aiInsights) {
+                    container.innerHTML = '<p>AI insights data not available</p>';
+                    return;
+                }
+                
+                const summary = aiInsights.summary || 'No AI summary available';
+                const opportunities = aiInsights.opportunities || [];
+                
+                container.innerHTML = `
+                    <h4>AI Analysis Summary</h4>
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--border-radius); margin: 1rem 0;">
+                        <pre style="white-space: pre-wrap; font-family: inherit; font-size: 0.875rem;">${summary}</pre>
+                    </div>
+                    
+                    <h4>Model Information</h4>
+                    <p><strong>Model Used:</strong> ${aiInsights.model_used || 'Unknown'}</p>
+                    <p><strong>Confidence:</strong> ${aiInsights.confidence || 0}%</p>
+                    <p><strong>Processing Time:</strong> ${aiInsights.processing_time || 0}s</p>
+                    <p><strong>Cost:</strong> $${aiInsights.cost || 0}</p>
+                    
+                    ${opportunities.length > 0 ? `
+                        <h4>Key Opportunities</h4>
+                        <ul>
+                            ${opportunities.map(opp => `<li>${opp}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                `;
+            }
+
+            updateStrategiesTab(strategies) {
+                const container = document.getElementById('strategies-content');
+                if (!strategies) {
+                    container.innerHTML = '<p>Trading strategies data not available</p>';
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <div class="strategy-grid">
+                        <div class="strategy-card">
+                            <h4>🛡️ Conservative Strategy</h4>
+                            <p><strong>Action:</strong> ${strategies.conservative?.action || 'Unknown'}</p>
+                            <p><strong>Position Size:</strong> ${strategies.conservative?.position_size || 'Unknown'}</p>
+                            <p><strong>Risk/Reward:</strong> ${strategies.conservative?.risk_reward || 'Unknown'}</p>
+                            <p><strong>Confidence:</strong> ${strategies.conservative?.confidence || 'Unknown'}</p>
+                            <p><strong>Description:</strong> ${strategies.conservative?.description || 'No description'}</p>
+                        </div>
+                        
+                        <div class="strategy-card">
+                            <h4>⚖️ Moderate Strategy</h4>
+                            <p><strong>Action:</strong> ${strategies.moderate?.action || 'Unknown'}</p>
+                            <p><strong>Position Size:</strong> ${strategies.moderate?.position_size || 'Unknown'}</p>
+                            <p><strong>Risk/Reward:</strong> ${strategies.moderate?.risk_reward || 'Unknown'}</p>
+                            <p><strong>Confidence:</strong> ${strategies.moderate?.confidence || 'Unknown'}</p>
+                            <p><strong>Description:</strong> ${strategies.moderate?.description || 'No description'}</p>
+                        </div>
+                        
+                        <div class="strategy-card">
+                            <h4>🚀 Aggressive Strategy</h4>
+                            <p><strong>Action:</strong> ${strategies.aggressive?.action || 'Unknown'}</p>
+                            <p><strong>Position Size:</strong> ${strategies.aggressive?.position_size || 'Unknown'}</p>
+                            <p><strong>Risk/Reward:</strong> ${strategies.aggressive?.risk_reward || 'Unknown'}</p>
+                            <p><strong>Confidence:</strong> ${strategies.aggressive?.confidence || 'Unknown'}</p>
+                            <p><strong>Description:</strong> ${strategies.aggressive?.description || 'No description'}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            updateReportTab(formattedReport) {
+                const container = document.getElementById('formatted-report-content');
+                container.textContent = formattedReport || 'Formatted report not available';
+            }
+
+            switchTab(tabName) {
+                // Remove active class from all tabs and contents
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Add active class to selected tab and content
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            }
+
+            toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                this.updateThemeIcon(newTheme);
+            }
+
+            updateThemeIcon(theme) {
+                const icon = document.querySelector('.theme-toggle i');
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+
+            showErrorState(message) {
+                document.getElementById('master-analysis-loading').style.display = 'none';
+                document.getElementById('master-results-content').style.display = 'none';
+                document.getElementById('master-error-state').style.display = 'block';
+                document.getElementById('master-error-message').textContent = message;
+            }
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            new MasterAnalyzer();
+        });
+    </script>
+</body>
+</html>

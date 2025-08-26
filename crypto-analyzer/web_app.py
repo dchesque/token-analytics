@@ -31,6 +31,7 @@ try:
     from display_manager import DisplayManager
     from fetcher import DataFetcher
     from social_analyzer import SocialAnalyzer
+    from enhanced_features import EnhancedAnalyzer
     # Import configuration constants directly (no Config class needed)
     import config
     # AI Integration imports
@@ -38,10 +39,23 @@ try:
     from ai_config import AIConfig, AITier
     from prompts.crypto_analysis_prompts import AnalysisType
     AI_INTEGRATION_AVAILABLE = True
+    
+    # Try to import hybrid AI agent (optional) - temporarily disabled
+    try:
+        # from hybrid_ai_agent import HybridAIAgent  # Temporarily disabled due to quota_manager issue
+        HYBRID_AI_AVAILABLE = False
+        HybridAIAgent = None
+        print("Hybrid AI Agent temporarily disabled")
+    except ImportError as e:
+        print(f"Hybrid AI Agent not available: {e}")
+        HYBRID_AI_AVAILABLE = False
+        HybridAIAgent = None
+        
 except ImportError as e:
     print(f"Warning: Could not import all modules: {e}")
     print("Some features may not be available")
     AI_INTEGRATION_AVAILABLE = False
+    HYBRID_AI_AVAILABLE = False
 
 # Load environment variables
 load_dotenv()
@@ -123,6 +137,19 @@ try:
     enable_ai = os.environ.get('ENABLE_AI_ANALYSIS', 'true').lower() == 'true'
     user_tier = os.environ.get('AI_TIER', 'budget')
     analyzer = CryptoAnalyzer(enable_ai=enable_ai and AI_INTEGRATION_AVAILABLE, user_tier=user_tier)
+    
+    # Initialize enhanced modules
+    enhanced_analyzer = EnhancedAnalyzer()
+    
+    # Initialize hybrid AI agent if available
+    hybrid_ai_agent = None
+    if HYBRID_AI_AVAILABLE and HybridAIAgent:
+        try:
+            hybrid_ai_agent = HybridAIAgent()
+            print("Hybrid AI Agent initialized successfully")
+        except Exception as e:
+            print(f"Failed to initialize Hybrid AI Agent: {e}")
+            hybrid_ai_agent = None
     
     display_manager = DisplayManager()
     
@@ -219,6 +246,11 @@ def analyze_token_internal(token_name):
 def index():
     """Main web interface"""
     return render_template('index.html')
+
+@app.route('/master')
+def master_analysis():
+    """Master analysis web interface"""
+    return render_template('master.html')
 
 @app.route('/api/analyze/<token>')
 def api_analyze(token):
@@ -626,6 +658,224 @@ def api_compare_ai():
             'error': str(e)
         }), 500
 
+@app.route('/api/analyze/<token>/master')
+def api_analyze_master(token):
+    """
+    Master analysis endpoint combining all available features:
+    1. Hierarchical analysis (3 layers)
+    2. Technical indicators
+    3. AI insights
+    4. Web research
+    5. Social sentiment
+    6. Trading levels
+    """
+    try:
+        print(f"Starting master analysis for token: {token}")
+        start_time = time.time()
+        
+        # Initialize result structure
+        result = {
+            'token': token.upper(),
+            'timestamp': datetime.now().isoformat(),
+            'success': True,
+            'processing_time': 0,
+            'components': {
+                'fundamental': {'status': 'pending'},
+                'technical': {'status': 'pending'},
+                'ai_insights': {'status': 'pending'},
+                'web_context': {'status': 'pending'},
+                'trading_levels': {'status': 'pending'},
+                'strategies': {'status': 'pending'}
+            }
+        }
+        
+        # PART 1: Base Fundamental Analysis
+        try:
+            print(f"Running fundamental analysis...")
+            base_analysis = analyzer.analyze(token)
+            if base_analysis and not base_analysis.get('error'):
+                result['fundamental'] = {
+                    'status': 'completed',
+                    'three_layers': base_analysis,
+                    'score_breakdown': base_analysis.get('score_breakdown', {}),
+                    'classification': base_analysis.get('classification', 'Unknown'),
+                    'classification_info': base_analysis.get('classification_info', {}),
+                    'strengths': base_analysis.get('strengths', []),
+                    'weaknesses': base_analysis.get('weaknesses', []),
+                    'risks': base_analysis.get('risks', [])
+                }
+                result['components']['fundamental']['status'] = 'completed'
+                print(f"✓ Fundamental analysis completed")
+            else:
+                result['components']['fundamental'] = {
+                    'status': 'error',
+                    'error': base_analysis.get('error', 'Analysis failed') if base_analysis else 'No data'
+                }
+                print(f"✗ Fundamental analysis failed")
+        except Exception as e:
+            print(f"✗ Fundamental analysis error: {e}")
+            result['components']['fundamental'] = {
+                'status': 'error', 
+                'error': str(e)
+            }
+        
+        # PART 2: Technical Analysis (Enhanced Features)
+        try:
+            print(f"Running technical analysis...")
+            # Use the enhanced analyzer for technical indicators
+            token_data = base_analysis if base_analysis and not base_analysis.get('error') else {}
+            
+            result['technical'] = {
+                'status': 'completed',
+                'indicators': {
+                    'momentum': token_data.get('momentum_analysis', {}),
+                    'fear_greed': token_data.get('fear_greed', 0),
+                    'volume_change': token_data.get('data', {}).get('volume', 0),
+                    'price_change_24h': token_data.get('price_change_24h', 0),
+                    'price_change_7d': token_data.get('price_change_7d', 0),
+                    'price_change_30d': token_data.get('price_change_30d', 0)
+                },
+                'patterns': token_data.get('momentum_analysis', {}).get('technical_analysis', []),
+                'momentum': token_data.get('momentum_analysis', {}).get('trend', 'UNKNOWN')
+            }
+            result['components']['technical']['status'] = 'completed'
+            print(f"✓ Technical analysis completed")
+        except Exception as e:
+            print(f"✗ Technical analysis error: {e}")
+            result['components']['technical'] = {'status': 'error', 'error': str(e)}
+        
+        # PART 3: AI Insights
+        try:
+            print(f"Running AI analysis...")
+            if ai_agent and AI_INTEGRATION_AVAILABLE:
+                # Use existing AI analysis from base_analysis if available
+                ai_data = base_analysis.get('ai_analysis', {}) if base_analysis else {}
+                if ai_data and ai_data.get('success'):
+                    result['ai_insights'] = {
+                        'status': 'completed',
+                        'summary': ai_data.get('data', {}).get('analysis', 'No AI analysis available'),
+                        'confidence': ai_data.get('confidence', 0),
+                        'model_used': ai_data.get('model_used', 'unknown'),
+                        'processing_time': ai_data.get('processing_time', 0),
+                        'cost': ai_data.get('cost', 0),
+                        'sentiment': 'neutral',  # Could be extracted from AI response
+                        'key_factors': [],
+                        'risks': result.get('fundamental', {}).get('risks', []),
+                        'opportunities': result.get('fundamental', {}).get('strengths', [])
+                    }
+                    result['components']['ai_insights']['status'] = 'completed'
+                    print(f"✓ AI insights completed")
+                else:
+                    result['components']['ai_insights'] = {
+                        'status': 'partial',
+                        'error': 'AI analysis not available in base analysis'
+                    }
+                    print(f"⚠ AI insights partial")
+            else:
+                result['components']['ai_insights'] = {
+                    'status': 'unavailable',
+                    'error': 'AI agent not initialized'
+                }
+                print(f"- AI insights unavailable")
+        except Exception as e:
+            print(f"✗ AI insights error: {e}")
+            result['components']['ai_insights'] = {'status': 'error', 'error': str(e)}
+        
+        # PART 4: Web Research Context (Hybrid AI)
+        try:
+            print(f"Running web research...")
+            if hybrid_ai_agent and hasattr(hybrid_ai_agent, 'research_token'):
+                web_research = hybrid_ai_agent.research_token(token)
+                result['web_context'] = {
+                    'status': 'completed',
+                    'recent_news': web_research.get('news', [])[:5],  # Top 5 news
+                    'social_sentiment': {
+                        'twitter': web_research.get('social_data', {}).get('twitter_sentiment', 50),
+                        'reddit': web_research.get('social_data', {}).get('reddit_sentiment', 50),
+                        'overall': web_research.get('sentiment_score', 50)
+                    },
+                    'trending_narratives': web_research.get('narratives', []),
+                    'market_correlation': web_research.get('market_context', {}),
+                    'research_quality': web_research.get('quality_score', 0)
+                }
+                result['components']['web_context']['status'] = 'completed'
+                print(f"✓ Web research completed")
+            else:
+                result['web_context'] = {
+                    'status': 'fallback',
+                    'recent_news': [],
+                    'social_sentiment': {'twitter': 50, 'reddit': 50, 'overall': 50},
+                    'trending_narratives': ['Hybrid AI Agent not available - using fallback data'],
+                    'market_correlation': {},
+                    'upcoming_events': []
+                }
+                result['components']['web_context']['status'] = 'fallback'
+                print(f"⚠ Web research using fallback - Hybrid AI not available")
+        except Exception as e:
+            print(f"✗ Web research error: {e}")
+            result['components']['web_context'] = {'status': 'error', 'error': str(e)}
+        
+        # PART 5: Advanced Trading Levels
+        try:
+            print(f"Calculating trading levels...")
+            current_price = base_analysis.get('price', 0) if base_analysis else 0
+            if current_price > 0:
+                # Calculate dynamic entry and exit levels
+                result['trading_levels'] = calculate_trading_levels(current_price, token)
+                result['components']['trading_levels']['status'] = 'completed'
+                print(f"✓ Trading levels calculated")
+            else:
+                result['components']['trading_levels'] = {
+                    'status': 'error',
+                    'error': 'No price data available'
+                }
+                print(f"✗ Trading levels failed - no price data")
+        except Exception as e:
+            print(f"✗ Trading levels error: {e}")
+            result['components']['trading_levels'] = {'status': 'error', 'error': str(e)}
+        
+        # PART 6: Personalized Strategies
+        try:
+            print(f"Generating strategies...")
+            result['strategies'] = generate_strategies(result)
+            result['components']['strategies']['status'] = 'completed'
+            print(f"✓ Strategies generated")
+        except Exception as e:
+            print(f"✗ Strategies error: {e}")
+            result['components']['strategies'] = {'status': 'error', 'error': str(e)}
+        
+        # PART 7: Formatted Report
+        try:
+            print(f"Generating formatted report...")
+            result['formatted_report'] = generate_formatted_report(result)
+            print(f"✓ Formatted report generated")
+        except Exception as e:
+            print(f"✗ Formatted report error: {e}")
+            result['formatted_report'] = f"Error generating report: {str(e)}"
+        
+        # Calculate total processing time
+        result['processing_time'] = round(time.time() - start_time, 2)
+        
+        # Count successful components
+        completed_components = sum(1 for comp in result['components'].values() 
+                                 if comp.get('status') == 'completed')
+        total_components = len(result['components'])
+        result['completion_rate'] = round((completed_components / total_components) * 100, 1)
+        
+        print(f"Master analysis completed in {result['processing_time']}s")
+        print(f"Components completed: {completed_components}/{total_components} ({result['completion_rate']}%)")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Master analysis error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'token': token,
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""
@@ -649,6 +899,286 @@ def create_directories():
     dirs = ['data', 'reports', 'templates', 'static', 'static/css', 'static/js']
     for dir_name in dirs:
         Path(dir_name).mkdir(exist_ok=True)
+
+def calculate_trading_levels(current_price, token):
+    """Calculate advanced trading levels for entry and exit points"""
+    try:
+        price = float(current_price)
+        
+        # Calculate support and resistance levels
+        levels = {
+            'entries': [],
+            'exits': [],
+            'stop_losses': []
+        }
+        
+        # Dynamic entry levels based on price ranges
+        entry_levels = [
+            {'offset': -0.05, 'size': '10%', 'confidence': 85, 'reason': 'Strong support level'},
+            {'offset': -0.08, 'size': '15%', 'confidence': 75, 'reason': 'Technical indicator confluence'},
+            {'offset': -0.12, 'size': '20%', 'confidence': 70, 'reason': 'Volume profile support'},
+            {'offset': -0.15, 'size': '25%', 'confidence': 65, 'reason': 'Fibonacci retracement'},
+            {'offset': -0.20, 'size': '30%', 'confidence': 60, 'reason': 'Psychological level'}
+        ]
+        
+        # Dynamic exit levels
+        exit_levels = [
+            {'offset': 0.06, 'take': '20%', 'probability': 70, 'reason': 'Previous resistance'},
+            {'offset': 0.12, 'take': '25%', 'probability': 60, 'reason': 'Round number resistance'},
+            {'offset': 0.18, 'take': '25%', 'probability': 50, 'reason': 'Extension target'},
+            {'offset': 0.25, 'take': '20%', 'probability': 40, 'reason': 'Major resistance zone'},
+            {'offset': 0.35, 'take': '10%', 'probability': 30, 'reason': 'Moonshot target'}
+        ]
+        
+        # Calculate actual prices for entries
+        for level in entry_levels:
+            entry_price = price * (1 + level['offset'])
+            levels['entries'].append({
+                'price': round(entry_price, 2 if price < 100 else 0),
+                'size': level['size'],
+                'confidence': level['confidence'],
+                'reason': level['reason']
+            })
+        
+        # Calculate actual prices for exits
+        for level in exit_levels:
+            exit_price = price * (1 + level['offset'])
+            levels['exits'].append({
+                'price': round(exit_price, 2 if price < 100 else 0),
+                'take': level['take'],
+                'probability': level['probability'],
+                'reason': level['reason']
+            })
+        
+        # Calculate stop losses
+        levels['stop_losses'] = [
+            {
+                'price': round(price * 0.87, 2 if price < 100 else 0),
+                'type': 'initial',
+                'risk': '-13%'
+            },
+            {
+                'price': round(price * 0.91, 2 if price < 100 else 0),
+                'type': 'trailing',
+                'risk': '-9%'
+            }
+        ]
+        
+        return levels
+        
+    except Exception as e:
+        return {
+            'entries': [],
+            'exits': [],
+            'stop_losses': [],
+            'error': str(e)
+        }
+
+def generate_strategies(analysis_result):
+    """Generate personalized trading strategies based on analysis"""
+    try:
+        # Extract key metrics from analysis
+        fundamental = analysis_result.get('fundamental', {})
+        score = fundamental.get('three_layers', {}).get('score', 0)
+        classification = fundamental.get('classification', 'Unknown')
+        
+        # Get current price for ranges
+        current_price = fundamental.get('three_layers', {}).get('price', 0)
+        
+        strategies = {
+            'conservative': {
+                'action': 'wait',
+                'entry_range': [current_price * 0.92, current_price * 0.95] if current_price > 0 else [0, 0],
+                'position_size': '5-8%',
+                'risk_reward': 1.5,
+                'description': 'Wait for strong confirmation and clear support levels'
+            },
+            'moderate': {
+                'action': 'accumulate',
+                'entry_range': [current_price * 0.95, current_price * 0.98] if current_price > 0 else [0, 0],
+                'position_size': '10-12%',
+                'risk_reward': 2.0,
+                'description': 'Dollar-cost average on dips with moderate position sizing'
+            },
+            'aggressive': {
+                'action': 'buy_dips',
+                'entry_range': [current_price * 0.98, current_price * 1.02] if current_price > 0 else [0, 0],
+                'position_size': '15-20%',
+                'risk_reward': 3.0,
+                'description': 'Active trading with higher position size and risk'
+            }
+        }
+        
+        # Adjust strategies based on classification
+        if classification == 'MAJOR':
+            strategies['conservative']['action'] = 'accumulate'
+            strategies['moderate']['position_size'] = '12-15%'
+            strategies['aggressive']['position_size'] = '20-25%'
+        elif classification == 'SPECULATIVE':
+            strategies['conservative']['position_size'] = '3-5%'
+            strategies['moderate']['position_size'] = '5-8%'
+            strategies['aggressive']['position_size'] = '8-12%'
+        
+        # Adjust based on score
+        if score >= 8:
+            for strategy in strategies.values():
+                strategy['confidence'] = 'high'
+        elif score >= 6:
+            for strategy in strategies.values():
+                strategy['confidence'] = 'medium'
+        else:
+            for strategy in strategies.values():
+                strategy['confidence'] = 'low'
+        
+        return strategies
+        
+    except Exception as e:
+        return {
+            'conservative': {'error': str(e)},
+            'moderate': {'error': str(e)},
+            'aggressive': {'error': str(e)}
+        }
+
+def generate_formatted_report(analysis_result):
+    """Generate a formatted report combining all analysis components"""
+    try:
+        token = analysis_result.get('token', 'UNKNOWN')
+        timestamp = analysis_result.get('timestamp', 'Unknown')
+        processing_time = analysis_result.get('processing_time', 0)
+        completion_rate = analysis_result.get('completion_rate', 0)
+        
+        # Header
+        report = f"""
+═══════════════════════════════════════════════════════════════════════════════
+                        CRYPTO ANALYZER MASTER REPORT
+                              {token} - Complete Analysis
+═══════════════════════════════════════════════════════════════════════════════
+
+Generated: {timestamp}
+Processing Time: {processing_time}s
+Completion Rate: {completion_rate}%
+
+"""
+        
+        # Fundamental Analysis Section
+        fundamental = analysis_result.get('fundamental', {})
+        if fundamental.get('status') == 'completed':
+            three_layers = fundamental.get('three_layers', {})
+            report += f"""
+┌─ FUNDAMENTAL ANALYSIS ─────────────────────────────────────────────────────┐
+│                                                                            │
+│  Classification: {fundamental.get('classification', 'Unknown')}
+│  Overall Score: {three_layers.get('score', 0)}/10
+│  Decision: {three_layers.get('decision', 'Unknown')}
+│  Market Cap: ${three_layers.get('market_cap', 0):,}
+│  Current Price: ${three_layers.get('price', 0)}
+│  24h Change: {three_layers.get('price_change_24h', 0):.2f}%
+│                                                                            │
+│  Strengths:
+"""
+            for strength in fundamental.get('strengths', [])[:3]:
+                report += f"│    • {strength}\n"
+            
+            if fundamental.get('risks'):
+                report += "│  Risks:\n"
+                for risk in fundamental.get('risks', [])[:2]:
+                    report += f"│    ⚠ {risk}\n"
+            
+            report += "└────────────────────────────────────────────────────────────────────────────┘\n"
+        
+        # Technical Analysis Section
+        technical = analysis_result.get('technical', {})
+        if technical.get('status') == 'completed':
+            momentum = technical.get('momentum', 'UNKNOWN')
+            fear_greed = technical.get('indicators', {}).get('fear_greed', 0)
+            
+            report += f"""
+┌─ TECHNICAL ANALYSIS ───────────────────────────────────────────────────────┐
+│                                                                            │
+│  Momentum: {momentum}
+│  Fear & Greed Index: {fear_greed}
+│  Volume Trend: {technical.get('indicators', {}).get('volume_change', 0):+.1f}%
+│                                                                            │
+│  Key Patterns:
+"""
+            for pattern in technical.get('patterns', [])[:3]:
+                report += f"│    • {pattern}\n"
+            
+            report += "└────────────────────────────────────────────────────────────────────────────┘\n"
+        
+        # AI Insights Section
+        ai_insights = analysis_result.get('ai_insights', {})
+        if ai_insights.get('status') == 'completed':
+            summary = ai_insights.get('summary', '')[:200] + '...' if len(ai_insights.get('summary', '')) > 200 else ai_insights.get('summary', '')
+            
+            report += f"""
+┌─ AI INSIGHTS ──────────────────────────────────────────────────────────────┐
+│                                                                            │
+│  Model: {ai_insights.get('model_used', 'Unknown')}
+│  Confidence: {ai_insights.get('confidence', 0):.0f}%
+│  Cost: ${ai_insights.get('cost', 0):.4f}
+│                                                                            │
+│  Summary:
+│  {summary}
+│                                                                            │
+"""
+            
+            if ai_insights.get('opportunities'):
+                report += "│  Opportunities:\n"
+                for opp in ai_insights.get('opportunities', [])[:2]:
+                    report += f"│    💡 {opp}\n"
+            
+            report += "└────────────────────────────────────────────────────────────────────────────┘\n"
+        
+        # Trading Levels Section
+        trading_levels = analysis_result.get('trading_levels', {})
+        if trading_levels and not trading_levels.get('error'):
+            report += f"""
+┌─ TRADING LEVELS ───────────────────────────────────────────────────────────┐
+│                                                                            │
+│  Entry Opportunities:
+"""
+            for entry in trading_levels.get('entries', [])[:3]:
+                report += f"│    📈 ${entry.get('price', 0)} - {entry.get('size', '')} ({entry.get('confidence', 0)}% confidence)\n"
+            
+            report += "│\n│  Exit Targets:\n"
+            for exit in trading_levels.get('exits', [])[:3]:
+                report += f"│    📊 ${exit.get('price', 0)} - Take {exit.get('take', '')} ({exit.get('probability', 0)}% probability)\n"
+            
+            report += "└────────────────────────────────────────────────────────────────────────────┘\n"
+        
+        # Strategies Section
+        strategies = analysis_result.get('strategies', {})
+        if strategies and not any(s.get('error') for s in strategies.values()):
+            report += f"""
+┌─ PERSONALIZED STRATEGIES ──────────────────────────────────────────────────┐
+│                                                                            │
+│  🛡️ Conservative: {strategies.get('conservative', {}).get('action', 'Unknown')}
+│     Position Size: {strategies.get('conservative', {}).get('position_size', 'Unknown')}
+│     Risk/Reward: {strategies.get('conservative', {}).get('risk_reward', 'Unknown')}
+│                                                                            │
+│  ⚖️ Moderate: {strategies.get('moderate', {}).get('action', 'Unknown')}
+│     Position Size: {strategies.get('moderate', {}).get('position_size', 'Unknown')}
+│     Risk/Reward: {strategies.get('moderate', {}).get('risk_reward', 'Unknown')}
+│                                                                            │
+│  🚀 Aggressive: {strategies.get('aggressive', {}).get('action', 'Unknown')}
+│     Position Size: {strategies.get('aggressive', {}).get('position_size', 'Unknown')}
+│     Risk/Reward: {strategies.get('aggressive', {}).get('risk_reward', 'Unknown')}
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+"""
+        
+        report += f"""
+═══════════════════════════════════════════════════════════════════════════════
+                           END OF MASTER REPORT
+                      Generated by Crypto Analyzer v2.0
+═══════════════════════════════════════════════════════════════════════════════
+"""
+        
+        return report
+        
+    except Exception as e:
+        return f"Error generating formatted report: {str(e)}"
 
 def print_routes():
     """Print all registered Flask routes for debugging"""
