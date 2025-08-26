@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 AI Token Preview Web Application
-Flask-based web interface for AI Token Preview v2.0
-Supports both API and Web UI modes
+Flask-based web interface with REST API for cryptocurrency analysis
+Supports both Web UI and API endpoints for EasyPanel deployment
 """
 
 import os
@@ -20,11 +20,15 @@ from dotenv import load_dotenv
 # Add src to path to import modules
 sys.path.append(str(Path(__file__).parent / 'src'))
 
-from analyzer import CryptoAnalyzer
-from display_manager import DisplayManager
-from fetcher import CryptoFetcher
-from social_analyzer import SocialAnalyzer
-from config import Config
+try:
+    from analyzer import CryptoAnalyzer
+    from display_manager import DisplayManager
+    from fetcher import CryptoFetcher
+    from social_analyzer import SocialAnalyzer
+    from config import Config
+except ImportError as e:
+    print(f"Warning: Could not import all modules: {e}")
+    print("Some features may not be available")
 
 # Load environment variables
 load_dotenv()
@@ -38,17 +42,28 @@ CORS(app)
 # Global cache for results
 cache = {}
 cache_lock = threading.Lock()
-CACHE_DURATION = 300  # 5 minutes
+CACHE_DURATION = int(os.environ.get('CACHE_DURATION', 300))  # 5 minutes
 
-# Initialize components
-config = Config()
-fetcher = CryptoFetcher(config)
-social_analyzer = SocialAnalyzer(config)
-analyzer = CryptoAnalyzer(config, fetcher, social_analyzer)
-display_manager = DisplayManager()
+# Initialize components (with error handling)
+try:
+    config = Config()
+    fetcher = CryptoFetcher(config)
+    social_analyzer = SocialAnalyzer(config)
+    analyzer = CryptoAnalyzer(config, fetcher, social_analyzer)
+    display_manager = DisplayManager()
+    COMPONENTS_LOADED = True
+except Exception as e:
+    print(f"Warning: Could not initialize analysis components: {e}")
+    COMPONENTS_LOADED = False
+    config = None
+    analyzer = None
+    display_manager = None
 
 def get_cached_result(token):
     """Get cached result if available and not expired"""
+    if not COMPONENTS_LOADED:
+        return None
+        
     with cache_lock:
         if token in cache:
             result, timestamp = cache[token]
@@ -65,6 +80,12 @@ def cache_result(token, result):
 
 def analyze_token_internal(token_name):
     """Internal function to analyze a token"""
+    if not COMPONENTS_LOADED:
+        return {
+            'success': False,
+            'error': 'Analysis components not available. Please check configuration.'
+        }
+    
     try:
         # Check cache first
         cached = get_cached_result(token_name)
@@ -162,13 +183,31 @@ def api_compare():
 def api_status():
     """API status and health check"""
     try:
-        api_statuses = fetcher.check_api_status()
+        if not COMPONENTS_LOADED:
+            return jsonify({
+                'success': False,
+                'status': 'degraded',
+                'error': 'Analysis components not loaded',
+                'cache_size': len(cache),
+                'version': '2.0',
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        # Check API status if fetcher is available
+        api_statuses = {}
+        if hasattr(fetcher, 'check_api_status'):
+            try:
+                api_statuses = fetcher.check_api_status()
+            except:
+                api_statuses = {'status': 'unknown'}
+        
         return jsonify({
             'success': True,
             'status': 'healthy',
             'apis': api_statuses,
             'cache_size': len(cache),
             'version': '2.0',
+            'components_loaded': COMPONENTS_LOADED,
             'timestamp': datetime.now().isoformat()
         })
     except Exception as e:
@@ -183,6 +222,7 @@ def health():
     """Health check endpoint for Docker/EasyPanel"""
     return jsonify({
         'status': 'healthy',
+        'components_loaded': COMPONENTS_LOADED,
         'timestamp': datetime.now().isoformat()
     })
 
@@ -213,6 +253,12 @@ def api_history():
 def api_report(token):
     """Generate and download HTML report"""
     try:
+        if not COMPONENTS_LOADED:
+            return jsonify({
+                'success': False,
+                'error': 'Analysis components not available'
+            }), 500
+            
         result = analyze_token_internal(token)
         
         if not result.get('success'):
@@ -263,9 +309,16 @@ if __name__ == '__main__':
     # Create necessary directories
     create_directories()
     
-    # Get port from environment or default
+    # Get configuration from environment
     port = int(os.environ.get('PORT', 8000))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+    host = os.environ.get('HOST', '0.0.0.0')
+    
+    print(f"🚀 Starting AI Token Preview Web Server")
+    print(f"📊 Components Loaded: {COMPONENTS_LOADED}")
+    print(f"🌐 Server: http://{host}:{port}")
+    print(f"🔧 Debug Mode: {debug}")
+    print(f"📁 Cache Duration: {CACHE_DURATION}s")
     
     # Run the app
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    app.run(host=host, port=port, debug=debug)

@@ -26,9 +26,9 @@
             <div class="error-actions">
                 <a href="/" class="btn btn-primary">
                     <i class="fas fa-home"></i>
-                    Go Home
+                    Back to Analysis
                 </a>
-                <a href="/api/status" class="btn btn-secondary">
+                <a href="/api/status" class="btn btn-secondary" target="_blank">
                     <i class="fas fa-info-circle"></i>
                     API Status
                 </a>
@@ -37,7 +37,7 @@
             <div class="error-links">
                 <p>You might be looking for:</p>
                 <ul>
-                    <li><a href="/">Main Dashboard</a></li>
+                    <li><a href="/">AI Token Analysis Dashboard</a></li>
                     <li><a href="/api/analyze/bitcoin">Bitcoin Analysis API</a></li>
                     <li><a href="/api/status">System Status</a></li>
                 </ul>
@@ -57,9 +57,10 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            background: var(--bg-primary, #0a0e13);
+            color: var(--text-primary, #ffffff);
             padding: 2rem;
+            font-family: 'Inter', -apple-system, sans-serif;
         }
 
         .error-container {
@@ -69,14 +70,14 @@
 
         .error-icon {
             font-size: 4rem;
-            color: var(--accent-color);
+            color: var(--accent-color, #f0b90b);
             margin-bottom: 1rem;
         }
 
         .error-title {
             font-size: 6rem;
             font-weight: 700;
-            color: var(--accent-color);
+            color: var(--accent-color, #f0b90b);
             margin: 0;
             line-height: 1;
         }
@@ -85,12 +86,12 @@
             font-size: 2rem;
             font-weight: 600;
             margin: 1rem 0;
-            color: var(--text-primary);
+            color: var(--text-primary, #ffffff);
         }
 
         .error-description {
             font-size: 1.1rem;
-            color: var(--text-secondary);
+            color: var(--text-secondary, #b7bdc6);
             margin: 1.5rem 0 2rem;
         }
 
@@ -113,37 +114,38 @@
             transition: all 0.2s ease;
             border: none;
             cursor: pointer;
+            font-family: inherit;
         }
 
         .btn-primary {
-            background: var(--accent-color);
-            color: white;
+            background: var(--accent-color, #f0b90b);
+            color: var(--text-inverse, #000);
         }
 
         .btn-primary:hover {
-            background: var(--accent-hover);
+            background: var(--accent-hover, #e6a805);
             transform: translateY(-2px);
         }
 
         .btn-secondary {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            background: var(--bg-secondary, #151922);
+            color: var(--text-primary, #ffffff);
+            border: 1px solid var(--border-color, #2b3139);
         }
 
         .btn-secondary:hover {
-            background: var(--bg-hover);
+            background: var(--bg-hover, #262932);
             transform: translateY(-2px);
         }
 
         .error-links {
             margin-top: 3rem;
             padding-top: 2rem;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color, #2b3139);
         }
 
         .error-links p {
-            color: var(--text-secondary);
+            color: var(--text-secondary, #b7bdc6);
             margin-bottom: 1rem;
         }
 
@@ -156,21 +158,36 @@
         }
 
         .error-links a {
-            color: var(--accent-color);
+            color: var(--accent-color, #f0b90b);
             text-decoration: none;
+            transition: color 0.2s ease;
         }
 
         .error-links a:hover {
             text-decoration: underline;
+            opacity: 0.8;
         }
 
         .error-footer {
             margin-top: 2rem;
             text-align: center;
-            color: var(--text-secondary);
+            color: var(--text-secondary, #b7bdc6);
             font-size: 0.875rem;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color, #2b3139);
             padding-top: 1rem;
+        }
+
+        /* Light theme variables */
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-hover: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-inverse: #ffffff;
+            --border-color: #e1e5e9;
+            --accent-color: #f0b90b;
+            --accent-hover: #e6a805;
         }
 
         @media (max-width: 768px) {
@@ -188,6 +205,20 @@
             
             .error-links ul {
                 align-items: center;
+            }
+            
+            .error-page {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .error-title {
+                font-size: 3rem;
+            }
+            
+            .error-description {
+                font-size: 1rem;
             }
         }
     </style>

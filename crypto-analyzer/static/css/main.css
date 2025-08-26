@@ -374,6 +374,36 @@ body {
   transform: none;
 }
 
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-medium);
+  z-index: 10;
+  display: none;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.suggestion-item:hover {
+  background: var(--bg-hover);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
 .quick-tokens {
   display: flex;
   flex-wrap: wrap;
@@ -592,6 +622,15 @@ body {
   border-radius: var(--border-radius-small);
 }
 
+.ai-badge {
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius-small);
+  font-weight: 500;
+}
+
 .card-content {
   padding: 1.5rem;
 }
@@ -727,6 +766,45 @@ body {
   margin-top: 0.5rem;
 }
 
+/* AI Insights */
+.ai-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--border-radius-small);
+  border-left: 4px solid var(--accent-color);
+}
+
+.insight-icon {
+  color: var(--accent-color);
+  font-size: 1.25rem;
+  margin-top: 0.125rem;
+}
+
+.insight-content {
+  flex: 1;
+}
+
+.insight-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.insight-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 /* Technical Analysis */
 .technical-summary {
   display: flex;
@@ -764,44 +842,6 @@ body {
 .technical-signal.neutral {
   background: var(--warning-light);
   color: var(--warning-color);
-}
-
-/* Insights */
-.insights-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.insight-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-tertiary);
-  border-radius: var(--border-radius-small);
-}
-
-.insight-icon {
-  color: var(--accent-color);
-  font-size: 1.25rem;
-  margin-top: 0.125rem;
-}
-
-.insight-content {
-  flex: 1;
-}
-
-.insight-title {
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
-}
-
-.insight-description {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.5;
 }
 
 /* Error State */
@@ -938,6 +978,13 @@ body {
   text-align: center;
   color: var(--text-secondary);
   padding: 2rem;
+  font-style: italic;
+}
+
+.no-data {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 1rem;
   font-style: italic;
 }
 
