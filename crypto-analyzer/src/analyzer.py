@@ -605,11 +605,11 @@ class CryptoAnalyzer:
 {classification_data['emoji']} CLASSIFICAÇÃO: {classification_data['classification']}
 📝 {classification_data['description']}
 ⚖️ Nível de Risco: {classification_data['risk_level']}
-📊 Score de Fundamentos: {classification_data['score']}/10
+Score de Fundamentos: {classification_data['score']}/10
 🏆 Ranking: #{classification_data['rank']}
 
-💰 Market Cap: ${classification_data['market_cap']/1e9:.1f}B
-📈 {classification_data['quality']}
+Market Cap: ${classification_data['market_cap']/1e9:.1f}B
+{classification_data['quality']}
 """
         
         # Se for Major, adiciona métricas especiais
@@ -704,7 +704,7 @@ class CryptoAnalyzer:
     def analyze_price_momentum(self, token_id: str, current_data: dict):
         """Analisa momentum de preço - NÃO É RECOMENDAÇÃO"""
         
-        print(f"📈 Analisando momentum técnico de {token_id}...")
+        print(f"Analisando momentum tecnico de {token_id}...")
         
         # Busca histórico
         history = self.fetcher.get_price_history(token_id, 90)
@@ -816,7 +816,7 @@ class CryptoAnalyzer:
             color = "green"
         elif momentum_score >= 2:
             trend = "ALTA"
-            emoji = "📈"
+            emoji = "UP"
             color = "green"
         elif momentum_score >= -1:
             trend = "NEUTRO"
@@ -824,7 +824,7 @@ class CryptoAnalyzer:
             color = "yellow"
         elif momentum_score >= -3:
             trend = "BAIXA"
-            emoji = "📉"
+            emoji = "DOWN"
             color = "orange"
         else:
             trend = "FORTE BAIXA"
@@ -850,15 +850,15 @@ class CryptoAnalyzer:
         if indicators['position_in_range'] > 80:
             summary.append("⚠️ Preço próximo da máxima recente - possível resistência")
         elif indicators['position_in_range'] < 20:
-            summary.append("📊 Preço próximo da mínima recente - possível suporte")
+            summary.append("Preco proximo da minima recente - possivel suporte")
         else:
             summary.append(f"📍 Preço no meio do range histórico ({indicators['position_in_range']:.0f}%)")
         
         # Momentum
         if trend in ["FORTE ALTA", "ALTA"]:
-            summary.append("📈 Momentum técnico positivo observado")
+            summary.append("Momentum tecnico positivo observado")
         elif trend in ["FORTE BAIXA", "BAIXA"]:
-            summary.append("📉 Momentum técnico negativo observado")
+            summary.append("Momentum tecnico negativo observado")
         else:
             summary.append("➡️ Momentum lateral - sem direção clara")
         

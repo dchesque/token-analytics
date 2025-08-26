@@ -13,6 +13,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+# Ensure UTF-8 encoding on Windows
+if sys.platform.startswith('win'):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from flask import Flask, render_template, jsonify, request, send_file
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -58,6 +64,8 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 @app.before_request
 def log_request():
     print(f"Incoming request: {request.method} {request.path} from {request.remote_addr}")
+    if request.path.startswith('/api'):
+        print(f"API Request Data: {request.get_json() if request.is_json else 'No JSON data'}")
 
 # Simple test route to verify Flask is working
 @app.route('/test')
@@ -74,6 +82,36 @@ def test():
 cache = {}
 cache_lock = threading.Lock()
 CACHE_DURATION = int(os.environ.get('CACHE_DURATION', 300))  # 5 minutes
+
+def clean_unicode_for_windows(data):
+    """Remove or replace problematic Unicode characters for Windows"""
+    if isinstance(data, str):
+        # Replace common emoji and Unicode chars that cause problems on Windows
+        replacements = {
+            '📊': 'Chart',
+            '📈': 'Up',
+            '📉': 'Down',
+            '💰': 'Money',
+            '🚀': 'Rocket',
+            '⚡': 'Lightning',
+            '🔥': 'Fire',
+            '📍': 'Pin',
+            '➡️': 'Right',
+            '⬇️': 'Down',
+            '⚖️': 'Scale',
+            '🏆': 'Trophy',
+            '📝': 'Note'
+        }
+        for emoji, replacement in replacements.items():
+            data = data.replace(emoji, replacement)
+        # Remove any remaining high Unicode characters
+        data = data.encode('ascii', 'ignore').decode('ascii')
+        return data
+    elif isinstance(data, dict):
+        return {k: clean_unicode_for_windows(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [clean_unicode_for_windows(item) for item in data]
+    return data
 
 # Initialize components (with error handling)
 try:
@@ -141,16 +179,35 @@ def analyze_token_internal(token_name):
             return cached
         
         # Perform analysis
+        print(f"Starting analysis for token: {token_name}")
         result = analyzer.analyze(token_name)
+        print(f"Analysis result type: {type(result)}, has error: {result.get('error') if result else 'None'}")
         
-        if result and result.get('success', False):
+        # The analyzer doesn't return a 'success' field, check for 'error' instead
+        if result and not result.get('error'):
+            # Clean Unicode characters that may cause problems
+            cleaned_result = clean_unicode_for_windows(result)
+            
+            # Wrap the result in a success structure
+            wrapped_result = {
+                'success': True,
+                'data': cleaned_result,
+                'token': cleaned_result.get('token', token_name),
+                'score': cleaned_result.get('score', 0),
+                'decision': cleaned_result.get('decision', 'ANALYZED'),
+                'passed_elimination': cleaned_result.get('passed_elimination', False)
+            }
             # Cache the successful result
-            cache_result(token_name, result)
-            return result
+            cache_result(token_name, wrapped_result)
+            print(f"Analysis successful for {token_name}: score={wrapped_result['score']}, decision={wrapped_result['decision']}")
+            return wrapped_result
         else:
+            error_msg = result.get('error', 'Analysis failed') if result else 'No data received'
+            print(f"Analysis failed for {token_name}: {error_msg}")
             return {
                 'success': False,
-                'error': result.get('error', 'Analysis failed') if result else 'No data received'
+                'error': error_msg,
+                'data': result
             }
     except Exception as e:
         return {
@@ -619,12 +676,12 @@ if __name__ == '__main__':
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
     host = os.environ.get('HOST', '0.0.0.0')
     
-    print(f"🚀 Starting AI Token Preview Web Server")
-    print(f"📊 Components Loaded: {COMPONENTS_LOADED}")
-    print(f"🤖 AI Integration Available: {AI_INTEGRATION_AVAILABLE}")
-    print(f"🌐 Server: http://{host}:{port}")
-    print(f"🔧 Debug Mode: {debug}")
-    print(f"📁 Cache Duration: {CACHE_DURATION}s")
+    print(f"Starting AI Token Preview Web Server")
+    print(f"Components Loaded: {COMPONENTS_LOADED}")
+    print(f"AI Integration Available: {AI_INTEGRATION_AVAILABLE}")
+    print(f"Server: http://{host}:{port}")
+    print(f"Debug Mode: {debug}")
+    print(f"Cache Duration: {CACHE_DURATION}s")
     
     # Run the app
     app.run(host=host, port=port, debug=debug)

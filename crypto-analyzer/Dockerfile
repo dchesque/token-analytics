@@ -43,12 +43,18 @@ WORKDIR /app
 # Copy Python packages from builder
 COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 
-# Copy application files
+# Copy application files with proper structure
 COPY --chown=appuser:appuser . .
 
+# Ensure all necessary files are present
+COPY --chown=appuser:appuser src /app/src
+COPY --chown=appuser:appuser static /app/static
+COPY --chown=appuser:appuser templates /app/templates
+
 # Create necessary directories with proper permissions
-RUN mkdir -p /app/data /app/reports /app/templates /app/static/css /app/static/js \
-    && chown -R appuser:appuser /app
+RUN mkdir -p /app/data /app/reports \
+    && chown -R appuser:appuser /app \
+    && chmod -R 755 /app/static /app/templates
 
 # Install Flask and dependencies for web mode
 RUN pip install --no-cache-dir \
