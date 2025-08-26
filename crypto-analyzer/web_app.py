@@ -773,8 +773,7 @@ def api_analyze_master(token):
                 from prompts.crypto_analysis_prompts import AnalysisType
                 
                 # Make direct AI analysis call
-                ai_response = ai_agent.analyze(
-                    token=token,
+                ai_response = ai_agent.analyze_token(
                     token_data=token_analysis_data,
                     analysis_type=AnalysisType.TECHNICAL,
                     user_id='master_analysis'

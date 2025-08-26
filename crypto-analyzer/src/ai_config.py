@@ -96,15 +96,37 @@ class AIConfig:
         ),
         
         "deepseek/deepseek-chat-v3.1": ModelConfig(
-    name="deepseek/deepseek-chat-v3.1",
-    display_name="DeepSeek V3.1",
-    tier=ModelTier.ENTERPRISE,
-    cost_per_1m_tokens=0.20,  # ← CORRIGIR: Era 3.0, mas é 0.20
-    max_tokens=8192,
-    context_window=200000,
-    capabilities=["expert_analysis", "complex_reasoning", "comprehensive_reports"],
-    fallback_model="openai/gpt-4o-mini"
-)
+            name="deepseek/deepseek-chat-v3.1",
+            display_name="DeepSeek V3.1",
+            tier=ModelTier.ENTERPRISE,
+            cost_per_1m_tokens=0.20,
+            max_tokens=8192,
+            context_window=200000,
+            capabilities=["expert_analysis", "complex_reasoning", "comprehensive_reports"],
+            fallback_model="openai/gpt-4o-mini"
+        ),
+        
+        # Enterprise tier - Gemini 2.0 Flash (NEW DEFAULT)
+        "google/gemini-2.0-flash-001": ModelConfig(
+            name="google/gemini-2.0-flash-001",
+            display_name="Gemini 2.0 Flash",
+            tier=ModelTier.ENTERPRISE,
+            cost_per_1m_tokens=0.10,  # $0.10/M input tokens, $0.30/M output tokens
+            max_tokens=8192,
+            context_window=1048576,
+            capabilities=[
+                "financial_analysis",
+                "quantitative_reasoning", 
+                "expert_analysis",
+                "complex_reasoning",
+                "comprehensive_reports",
+                "technical_indicators",
+                "risk_assessment",
+                "market_analysis",
+                "crypto_expertise"
+            ],
+            fallback_model="openai/gpt-4o-mini"
+        )
     }
     
     # User tier configurations
@@ -151,7 +173,7 @@ class AIConfig:
         AITier.FREE: "meta-llama/llama-3.1-8b-instruct:free",
         AITier.BUDGET: "meta-llama/llama-3.1-70b-instruct",
         AITier.PREMIUM: "openai/gpt-4o-mini",
-        AITier.ENTERPRISE: "anthropic/claude-3.5-sonnet"
+        AITier.ENTERPRISE: "google/gemini-2.0-flash-001"  # Changed to Gemini 2.0 Flash
     }
     
     # Cache configuration
