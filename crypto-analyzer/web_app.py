@@ -668,12 +668,15 @@ def api_analyze_master(token):
     5. Social sentiment
     6. Trading levels
     """
-    # Initialize safe result structure immediately
+    start_time = time.time()
+    
+    # Initialize safe result structure immediately - THIS MUST ALWAYS WORK
     result = {
         'token': token.upper(),
         'timestamp': datetime.now().isoformat(),
         'success': False,
         'processing_time': 0,
+        'completion_rate': 0.0,
         'components': {
             'fundamental': {'status': 'error', 'error': 'Not started'},
             'technical': {'status': 'error', 'error': 'Not started'},
@@ -683,6 +686,12 @@ def api_analyze_master(token):
             'strategies': {'status': 'error', 'error': 'Not started'}
         }
     }
+    
+    # EMERGENCY FALLBACK: If any critical error, return immediately with basic structure
+    if not COMPONENTS_LOADED:
+        result['error'] = 'Components not loaded'
+        result['processing_time'] = time.time() - start_time
+        return jsonify(result), 500
     
     try:
         print(f"Starting master analysis for token: {token}")
