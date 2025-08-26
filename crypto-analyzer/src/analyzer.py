@@ -3,6 +3,16 @@ from fetcher import DataFetcher
 from social_analyzer import SocialAnalyzer
 from config import MIN_MARKET_CAP, MIN_VOLUME, MIN_AGE_DAYS, STRONG_BUY_SCORE, RESEARCH_SCORE
 
+# AI Integration imports
+try:
+    from ai_openrouter_agent import create_ai_agent, quick_analysis, AIResponse
+    from ai_config import AIConfig, AITier
+    from prompts.crypto_analysis_prompts import AnalysisType
+    AI_AVAILABLE = True
+except ImportError as e:
+    print(f"AI features not available: {e}")
+    AI_AVAILABLE = False
+
 # Estrutura de mercado crypto
 MARKET_STRUCTURE = {
     'MAJORS': {
@@ -33,11 +43,31 @@ MARKET_STRUCTURE = {
 }
 
 class CryptoAnalyzer:
-    def __init__(self):
+    def __init__(self, enable_ai=True, user_tier="budget"):
         self.fetcher = DataFetcher()
         self.debug_mode = False  # Desabilitado para evitar problemas Unicode no Windows
+        
+        # AI Integration
+        self.ai_enabled = enable_ai and AI_AVAILABLE and AIConfig.is_feature_enabled('ai_analysis')
+        self.ai_agent = None
+        self.user_tier = user_tier
+        
+        if self.ai_enabled:
+            try:
+                self.ai_agent = create_ai_agent(user_tier)
+            except Exception as e:
+                print(f"Failed to initialize AI agent: {e}")
+                self.ai_enabled = False
     
-    def analyze(self, token_query):
+    def analyze(self, token_query, enable_ai=None, ai_analysis_type=None):
+        """
+        Analyze token with optional AI enhancement
+        
+        Args:
+            token_query: Token symbol or name to analyze
+            enable_ai: Override AI setting for this analysis
+            ai_analysis_type: Type of AI analysis ('technical', 'trading_signals', 'risk_assessment', etc.)
+        """
         token_id = self.fetcher.search_token(token_query)
         if not token_id:
             return {
@@ -77,7 +107,8 @@ class CryptoAnalyzer:
         # Adicionar análise técnica de momentum
         momentum_analysis = self.analyze_price_momentum(token_id, token_data)
         
-        return {
+        # Preparar resultado base
+        base_result = {
             'token': token_data['symbol'],
             'token_name': token_data['name'],
             'passed_elimination': True,
@@ -106,6 +137,20 @@ class CryptoAnalyzer:
                 'risks': []  # Para compatibilidade com save_report
             }
         }
+        
+        # Adicionar análise AI se habilitada
+        if enable_ai is True or (enable_ai is None and self.ai_enabled):
+            ai_result = self.analyze_with_ai(token_data, ai_analysis_type)
+            if ai_result:
+                base_result['ai_analysis'] = ai_result
+                base_result['ai_enabled'] = True
+            else:
+                base_result['ai_enabled'] = False
+                base_result['ai_error'] = "AI analysis failed"
+        else:
+            base_result['ai_enabled'] = False
+        
+        return base_result
     
     def check_elimination(self, data):
         reasons = []
@@ -1019,3 +1064,136 @@ class CryptoAnalyzer:
         }
         
         return enhanced_analysis
+    
+    def analyze_with_ai(self, token_data, analysis_type=None, user_id="default"):
+        """
+        Perform AI-powered analysis of token data
+        
+        Args:
+            token_data: Token data from traditional analysis
+            analysis_type: Type of AI analysis to perform
+            user_id: User identifier for rate limiting
+        
+        Returns:
+            Dict containing AI analysis results or None if failed
+        """
+        if not self.ai_enabled or not self.ai_agent:
+            return None
+        
+        try:
+            # Determine analysis type
+            if analysis_type is None:
+                analysis_type = "technical"  # Default to technical analysis
+            
+            # Convert string to AnalysisType enum
+            if isinstance(analysis_type, str):
+                try:
+                    analysis_enum = AnalysisType(analysis_type.lower())
+                except ValueError:
+                    analysis_enum = AnalysisType.TECHNICAL
+            else:
+                analysis_enum = analysis_type
+            
+            # Prepare data for AI analysis
+            ai_input_data = self._prepare_ai_input(token_data)
+            
+            # Perform AI analysis
+            ai_response = self.ai_agent.analyze_token(
+                ai_input_data,
+                analysis_enum,
+                user_id
+            )
+            
+            if ai_response.success:
+                # Format AI response for integration with traditional analysis
+                return {
+                    'type': analysis_enum.value,
+                    'model_used': ai_response.model_used,
+                    'confidence': ai_response.confidence,
+                    'tokens_used': ai_response.tokens_used,
+                    'cost': ai_response.cost,
+                    'cached': ai_response.cached,
+                    'processing_time': ai_response.processing_time,
+                    'data': ai_response.data,
+                    'timestamp': time.time(),
+                    'success': True
+                }
+            else:
+                return {
+                    'type': analysis_enum.value if isinstance(analysis_enum, AnalysisType) else analysis_type,
+                    'error': ai_response.error,
+                    'model_attempted': ai_response.model_used,
+                    'success': False
+                }
+                
+        except Exception as e:
+            return {
+                'type': analysis_type if isinstance(analysis_type, str) else 'unknown',
+                'error': f"AI analysis failed: {str(e)}",
+                'success': False
+            }
+    
+    def _prepare_ai_input(self, token_data):
+        """Prepare token data for AI analysis"""
+        return {
+            'token_name': token_data.get('name', 'Unknown'),
+            'token_symbol': token_data.get('symbol', 'UNK'),
+            'current_price': token_data.get('price', 0),
+            'market_cap': token_data.get('market_cap', 0),
+            'market_cap_rank': token_data.get('market_cap_rank', 999),
+            'volume_24h': token_data.get('volume', 0),
+            'price_change_24h': token_data.get('price_change_24h', 0),
+            'price_change_7d': token_data.get('price_change_7d', 0),
+            'price_change_30d': token_data.get('price_change_30d', 0),
+            'high_24h': token_data.get('high_24h', 0),
+            'low_24h': token_data.get('low_24h', 0),
+            'circulating_supply': token_data.get('circulating_supply', 0),
+            'total_supply': token_data.get('total_supply', 0),
+            'max_supply': token_data.get('max_supply', 0),
+            'age_days': token_data.get('age_days', 0),
+            'ath': token_data.get('ath', 0),
+            'ath_date': token_data.get('ath_date', ''),
+            'atl': token_data.get('atl', 0),
+            'atl_date': token_data.get('atl_date', ''),
+            # Social metrics
+            'twitter_followers': token_data.get('twitter_followers', 0),
+            'reddit_subscribers': token_data.get('reddit_subscribers', 0),
+            'github_stars': token_data.get('github_stars', 0),
+            'github_commits': token_data.get('github_commits', 0),
+            'github_forks': token_data.get('github_forks', 0),
+            # Additional context
+            'additional_metrics': {
+                'volatility_30d': token_data.get('volatility_30d', 0),
+                'sharpe_ratio': token_data.get('sharpe_ratio', 0),
+                'beta': token_data.get('beta', 0),
+                'correlation_btc': token_data.get('correlation_btc', 0)
+            }
+        }
+    
+    def get_ai_models(self):
+        """Get available AI models for current user tier"""
+        if not self.ai_enabled or not self.ai_agent:
+            return []
+        
+        return self.ai_agent.get_available_models()
+    
+    def get_ai_usage_stats(self, user_id="default", days=1):
+        """Get AI usage statistics"""
+        if not self.ai_enabled or not self.ai_agent:
+            return None
+        
+        return self.ai_agent.get_usage_stats(user_id, days)
+    
+    def is_ai_enabled(self):
+        """Check if AI analysis is enabled and available"""
+        return self.ai_enabled and self.ai_agent is not None
+    
+    def ai_health_check(self):
+        """Check AI service health"""
+        if not self.ai_enabled or not self.ai_agent:
+            return {
+                'status': 'disabled',
+                'message': 'AI analysis is not enabled or available'
+            }
+        
+        return self.ai_agent.health_check()

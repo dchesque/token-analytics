@@ -26,9 +26,15 @@ try:
     from fetcher import CryptoFetcher
     from social_analyzer import SocialAnalyzer
     from config import Config
+    # AI Integration imports
+    from ai_openrouter_agent import create_ai_agent, get_ai_health
+    from ai_config import AIConfig, AITier
+    from prompts.crypto_analysis_prompts import AnalysisType
+    AI_INTEGRATION_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Could not import all modules: {e}")
     print("Some features may not be available")
+    AI_INTEGRATION_AVAILABLE = False
 
 # Load environment variables
 load_dotenv()
@@ -49,8 +55,23 @@ try:
     config = Config()
     fetcher = CryptoFetcher(config)
     social_analyzer = SocialAnalyzer(config)
-    analyzer = CryptoAnalyzer(config, fetcher, social_analyzer)
+    
+    # Initialize analyzer with AI support
+    enable_ai = os.environ.get('ENABLE_AI_ANALYSIS', 'true').lower() == 'true'
+    user_tier = os.environ.get('AI_TIER', 'budget')
+    analyzer = CryptoAnalyzer(enable_ai=enable_ai and AI_INTEGRATION_AVAILABLE, user_tier=user_tier)
+    
     display_manager = DisplayManager()
+    
+    # Initialize AI agent separately for web endpoints
+    ai_agent = None
+    if AI_INTEGRATION_AVAILABLE and enable_ai:
+        try:
+            ai_agent = create_ai_agent(user_tier)
+        except Exception as e:
+            print(f"Warning: Could not initialize AI agent: {e}")
+            ai_agent = None
+    
     COMPONENTS_LOADED = True
 except Exception as e:
     print(f"Warning: Could not initialize analysis components: {e}")
@@ -58,6 +79,7 @@ except Exception as e:
     config = None
     analyzer = None
     display_manager = None
+    ai_agent = None
 
 def get_cached_result(token):
     """Get cached result if available and not expired"""
@@ -275,6 +297,239 @@ def api_report(token):
             f.write(html_content)
         
         return send_file(report_path, as_attachment=True)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# AI-powered analysis endpoints
+@app.route('/api/analyze/<token>/ai')
+@app.route('/api/analyze/<token>/ai/<analysis_type>')
+def api_analyze_ai(token, analysis_type='technical'):
+    """AI-powered token analysis endpoint"""
+    try:
+        if not AI_INTEGRATION_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'error': 'AI analysis not available - missing dependencies'
+            }), 503
+        
+        if not ai_agent:
+            return jsonify({
+                'success': False,
+                'error': 'AI agent not initialized'
+            }), 503
+        
+        # Get user tier from request headers or use default
+        user_tier = request.headers.get('X-AI-Tier', 'budget')
+        user_id = request.headers.get('X-User-ID', 'web_user')
+        
+        # Validate analysis type
+        valid_types = ['technical', 'trading_signals', 'risk_assessment', 'market_context', 'comparative']
+        if analysis_type not in valid_types:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid analysis type. Valid types: {", ".join(valid_types)}'
+            }), 400
+        
+        # Get traditional analysis first
+        traditional_result = analyze_token_internal(token)
+        if not traditional_result.get('success'):
+            return jsonify(traditional_result)
+        
+        # Perform AI analysis
+        try:
+            analysis_enum = AnalysisType(analysis_type.lower())
+        except ValueError:
+            analysis_enum = AnalysisType.TECHNICAL
+        
+        # Prepare token data for AI
+        token_data = traditional_result.get('data', {})
+        ai_input_data = {
+            'token_name': token_data.get('name', token),
+            'token_symbol': token_data.get('symbol', token),
+            'current_price': token_data.get('price', 0),
+            'market_cap': token_data.get('market_cap', 0),
+            'volume_24h': token_data.get('volume', 0),
+            'price_change_24h': token_data.get('price_change_24h', 0)
+        }
+        
+        ai_response = ai_agent.analyze_token(ai_input_data, analysis_enum, user_id)
+        
+        if ai_response.success:
+            return jsonify({
+                'success': True,
+                'token': token,
+                'analysis_type': analysis_type,
+                'traditional_analysis': traditional_result,
+                'ai_analysis': {
+                    'model_used': ai_response.model_used,
+                    'confidence': ai_response.confidence,
+                    'tokens_used': ai_response.tokens_used,
+                    'cost': ai_response.cost,
+                    'cached': ai_response.cached,
+                    'processing_time': ai_response.processing_time,
+                    'data': ai_response.data
+                },
+                'timestamp': datetime.now().isoformat()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': ai_response.error,
+                'traditional_analysis': traditional_result,
+                'ai_analysis': {
+                    'error': ai_response.error,
+                    'model_attempted': ai_response.model_used
+                }
+            })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'AI analysis failed: {str(e)}'
+        }), 500
+
+@app.route('/api/ai/models')
+def api_ai_models():
+    """Get available AI models for current user tier"""
+    try:
+        if not AI_INTEGRATION_AVAILABLE or not ai_agent:
+            return jsonify({
+                'success': False,
+                'error': 'AI services not available'
+            }), 503
+        
+        user_tier = request.headers.get('X-AI-Tier', 'budget')
+        
+        # Get available models
+        models = ai_agent.get_available_models()
+        
+        return jsonify({
+            'success': True,
+            'user_tier': user_tier,
+            'models': models,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/usage')
+@app.route('/api/ai/usage/<int:days>')
+def api_ai_usage(days=1):
+    """Get AI usage statistics"""
+    try:
+        if not AI_INTEGRATION_AVAILABLE or not ai_agent:
+            return jsonify({
+                'success': False,
+                'error': 'AI services not available'
+            }), 503
+        
+        user_id = request.headers.get('X-User-ID', 'web_user')
+        usage_stats = ai_agent.get_usage_stats(user_id, days)
+        
+        return jsonify({
+            'success': True,
+            'usage_stats': usage_stats,
+            'period_days': days,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ai/health')
+def api_ai_health():
+    """AI service health check"""
+    try:
+        if not AI_INTEGRATION_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'status': 'unavailable',
+                'error': 'AI integration not available'
+            })
+        
+        health_status = get_ai_health()
+        
+        return jsonify({
+            'success': health_status['status'] in ['healthy', 'degraded'],
+            'health_status': health_status,
+            'ai_integration_available': AI_INTEGRATION_AVAILABLE,
+            'ai_agent_initialized': ai_agent is not None,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/compare-ai', methods=['POST'])
+def api_compare_ai():
+    """AI-powered token comparison"""
+    try:
+        if not AI_INTEGRATION_AVAILABLE or not ai_agent:
+            return jsonify({
+                'success': False,
+                'error': 'AI services not available'
+            }), 503
+        
+        data = request.get_json()
+        tokens = data.get('tokens', [])
+        
+        if not tokens or len(tokens) < 2:
+            return jsonify({
+                'success': False,
+                'error': 'At least 2 tokens required for AI comparison'
+            }), 400
+        
+        user_id = request.headers.get('X-User-ID', 'web_user')
+        
+        # Get traditional analysis for all tokens
+        tokens_data = []
+        for token in tokens[:5]:  # Limit to 5 tokens
+            result = analyze_token_internal(token)
+            if result.get('success'):
+                tokens_data.append(result.get('data', {}))
+        
+        if len(tokens_data) < 2:
+            return jsonify({
+                'success': False,
+                'error': 'Could not analyze enough tokens for comparison'
+            }), 400
+        
+        # Perform AI comparison
+        ai_response = ai_agent.compare_tokens(tokens_data, user_id)
+        
+        if ai_response.success:
+            return jsonify({
+                'success': True,
+                'comparison': {
+                    'tokens': tokens,
+                    'ai_analysis': {
+                        'model_used': ai_response.model_used,
+                        'confidence': ai_response.confidence,
+                        'data': ai_response.data,
+                        'processing_time': ai_response.processing_time
+                    }
+                },
+                'timestamp': datetime.now().isoformat()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': ai_response.error
+            })
+        
     except Exception as e:
         return jsonify({
             'success': False,

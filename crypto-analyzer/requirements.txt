@@ -16,3 +16,27 @@ MarkupSafe==2.1.3
 Werkzeug==2.3.7
 click==8.1.7
 itsdangerous==2.1.2
+
+# AI Integration dependencies
+dataclasses==0.6; python_version < '3.7'
+typing-extensions==4.8.0
+asyncio-compat==0.1.2
+
+# Additional HTTP client for OpenRouter API
+httpx==0.25.2
+aiohttp==3.9.1
+
+# JSON schema validation
+jsonschema==4.20.0
+
+# Enhanced error handling and retries
+tenacity==8.2.3
+
+# Caching utilities
+cachetools==5.3.2
+
+# Rate limiting
+ratelimiter==1.2.0.post0
+
+# Concurrent processing
+concurrent-futures==3.1.1; python_version < '3.2'
