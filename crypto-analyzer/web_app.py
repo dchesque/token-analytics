@@ -46,6 +46,30 @@ app = Flask(__name__,
            static_folder='static')
 CORS(app)
 
+# Configure Flask for production
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+app.config['JSON_SORT_KEYS'] = False
+
+# Handle proxy headers for EasyPanel deployment
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+# Request logging middleware for debugging
+@app.before_request
+def log_request():
+    print(f"Incoming request: {request.method} {request.path} from {request.remote_addr}")
+
+# Simple test route to verify Flask is working
+@app.route('/test')
+def test():
+    """Simple test endpoint to verify Flask is responding"""
+    return jsonify({
+        'message': 'Flask app is working!',
+        'path': request.path,
+        'method': request.method,
+        'timestamp': datetime.now().isoformat()
+    })
+
 # Global cache for results
 cache = {}
 cache_lock = threading.Lock()
@@ -247,8 +271,15 @@ def health():
     return jsonify({
         'status': 'healthy',
         'components_loaded': COMPONENTS_LOADED,
-        'timestamp': datetime.now().isoformat()
+        'ai_available': AI_INTEGRATION_AVAILABLE,
+        'timestamp': datetime.now().isoformat(),
+        'version': '2.1.1'
     })
+
+@app.route('/ping')
+def ping():
+    """Simple ping endpoint that doesn't depend on any components"""
+    return jsonify({'message': 'pong', 'status': 'ok'})
 
 @app.route('/api/history')
 def api_history():
@@ -562,9 +593,26 @@ def create_directories():
     for dir_name in dirs:
         Path(dir_name).mkdir(exist_ok=True)
 
+def print_routes():
+    """Print all registered Flask routes for debugging"""
+    print("\n=== REGISTERED FLASK ROUTES ===")
+    for rule in app.url_map.iter_rules():
+        print(f"  {rule.rule} [{', '.join(rule.methods)}] -> {rule.endpoint}")
+    print("=== END ROUTES ===\n")
+
+# Print routes when module is loaded (for WSGI servers)
+if not app.debug:
+    print_routes()
+
+# Make sure Flask app is available for WSGI servers
+application = app
+
 if __name__ == '__main__':
     # Create necessary directories
     create_directories()
+    
+    # Print registered routes for debugging
+    print_routes()
     
     # Get configuration from environment
     port = int(os.environ.get('PORT', 8000))
@@ -573,6 +621,7 @@ if __name__ == '__main__':
     
     print(f"🚀 Starting AI Token Preview Web Server")
     print(f"📊 Components Loaded: {COMPONENTS_LOADED}")
+    print(f"🤖 AI Integration Available: {AI_INTEGRATION_AVAILABLE}")
     print(f"🌐 Server: http://{host}:{port}")
     print(f"🔧 Debug Mode: {debug}")
     print(f"📁 Cache Duration: {CACHE_DURATION}s")

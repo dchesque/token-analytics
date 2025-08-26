@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(grep:*)",
-      "Bash(python test_config_fix.py:*)"
+      "Bash(python test_config_fix.py:*)",
+      "Bash(python test:*)"
     ],
     "deny": [],
     "ask": []
