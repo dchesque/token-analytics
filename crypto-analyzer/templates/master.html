@@ -442,14 +442,62 @@
                     this.currentToken = token;
                     this.showLoadingState(token);
                     
-                    // Fetch data from master API
-                    const response = await fetch(`/api/analyze/${encodeURIComponent(token)}/master`);
-                    const data = await response.json();
+                    let data = null;
+                    let usedFallback = false;
                     
-                    console.log('Master API response:', data);
+                    // Try main endpoint with timeout
+                    try {
+                        console.log('Attempting full master analysis...');
+                        this.updateLoadingMessage('Running complete analysis...');
+                        
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+                        
+                        const response = await fetch(`/api/analyze/${encodeURIComponent(token)}/master`, {
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+                        
+                        if (response.ok) {
+                            const responseText = await response.text();
+                            console.log('Raw response:', responseText.substring(0, 200));
+                            
+                            // Check if response is HTML (error page)
+                            if (responseText.trim().startsWith('<')) {
+                                throw new Error('Server returned HTML error page instead of JSON');
+                            }
+                            
+                            data = JSON.parse(responseText);
+                            console.log('Full master analysis successful');
+                        } else {
+                            throw new Error(`Master endpoint failed with status ${response.status}`);
+                        }
+                    } catch (masterError) {
+                        console.warn('Master endpoint failed:', masterError);
+                        
+                        // Fallback to basic analysis
+                        try {
+                            console.log('Trying basic analysis fallback...');
+                            this.updateLoadingMessage('Switching to basic analysis...');
+                            
+                            const response = await fetch(`/api/analyze/${encodeURIComponent(token)}/basic`);
+                            data = await response.json();
+                            usedFallback = true;
+                            console.log('Basic analysis fallback successful');
+                        } catch (basicError) {
+                            console.error('Basic analysis also failed:', basicError);
+                            throw new Error('All analysis endpoints failed. Please try again later.');
+                        }
+                    }
                     
-                    if (!response.ok || !data.success) {
-                        throw new Error(data.error || 'Master analysis failed');
+                    if (!data || !data.success) {
+                        throw new Error(data?.error || 'Analysis failed');
+                    }
+                    
+                    // Add fallback indicator to data
+                    if (usedFallback) {
+                        data.fallback_used = true;
+                        data.fallback_message = 'Using simplified analysis due to server issues';
                     }
                     
                     this.displayMasterResults(data);
@@ -472,11 +520,46 @@
                 });
             }
 
+            updateLoadingMessage(message) {
+                const loadingElement = document.querySelector('#master-analysis-loading .loading-message');
+                if (loadingElement) {
+                    loadingElement.textContent = message;
+                } else {
+                    // If no specific loading message element, try to find a generic one
+                    const loadingContainer = document.getElementById('master-analysis-loading');
+                    if (loadingContainer) {
+                        console.log('Loading status:', message);
+                    }
+                }
+            }
+
             displayMasterResults(data) {
                 // Hide loading, show results
                 document.getElementById('master-analysis-loading').style.display = 'none';
                 document.getElementById('master-results-content').style.display = 'block';
                 document.getElementById('master-error-state').style.display = 'none';
+
+                // Show fallback message if used
+                if (data.fallback_used) {
+                    const fallbackDiv = document.createElement('div');
+                    fallbackDiv.className = 'fallback-notice';
+                    fallbackDiv.style.cssText = `
+                        background: linear-gradient(135deg, #ff6b35, #f7931e);
+                        color: white;
+                        padding: 1rem;
+                        border-radius: 8px;
+                        margin-bottom: 1rem;
+                        font-weight: 500;
+                        text-align: center;
+                    `;
+                    fallbackDiv.innerHTML = `
+                        ⚠️ ${data.fallback_message || 'Using simplified analysis mode'}
+                        <br><small style="opacity: 0.9;">Full analysis temporarily unavailable</small>
+                    `;
+                    
+                    const container = document.getElementById('master-results-content');
+                    container.insertBefore(fallbackDiv, container.firstChild);
+                }
 
                 // Update overview cards
                 this.updateOverviewCards(data);
