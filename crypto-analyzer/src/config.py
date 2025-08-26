@@ -249,3 +249,24 @@ class HybridConfig:
                 'news': CACHE_NEWS
             }
         }
+
+class Config:
+    """Configuration class for web application"""
+    
+    def __init__(self):
+        # Load constants from this module
+        import os
+        
+        # Basic thresholds
+        self.MIN_MARKET_CAP = MIN_MARKET_CAP
+        self.MIN_VOLUME = MIN_VOLUME
+        self.MIN_AGE_DAYS = MIN_AGE_DAYS
+        self.STRONG_BUY_SCORE = STRONG_BUY_SCORE
+        self.RESEARCH_SCORE = RESEARCH_SCORE
+        
+        # Environment variables
+        self.WEB_MODE = os.getenv('WEB_MODE', 'true').lower() == 'true'
+        self.DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
+        self.PORT = int(os.getenv('PORT', 8000))
+        self.HOST = os.getenv('HOST', '0.0.0.0')
+        self.CACHE_DURATION = int(os.getenv('CACHE_DURATION', 300))
