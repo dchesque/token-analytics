@@ -71,13 +71,7 @@ class QuotaManager:
         # Priority tokens (can be configured)
         self.priority_tokens = self._load_priority_tokens()
         
-        # Initialize API quotas
-        self.quotas = self._load_quotas()
-        
-        # Usage history
-        self.usage_history: List[SearchRequest] = self._load_usage_history()
-        
-        # API configurations
+        # API configurations (must be defined before _load_quotas)
         self.api_configs = {
             APIProvider.TAVILY: {
                 'monthly_limit': 1000,
@@ -112,6 +106,12 @@ class QuotaManager:
                 'quality_score': 4  # Lower quality but always available
             }
         }
+        
+        # Initialize API quotas (now that api_configs is defined)
+        self.quotas = self._load_quotas()
+        
+        # Usage history
+        self.usage_history: List[SearchRequest] = self._load_usage_history()
     
     def _load_priority_tokens(self) -> Dict[str, TokenPriority]:
         """Load token priorities from environment or defaults"""

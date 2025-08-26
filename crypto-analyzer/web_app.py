@@ -40,12 +40,11 @@ try:
     from prompts.crypto_analysis_prompts import AnalysisType
     AI_INTEGRATION_AVAILABLE = True
     
-    # Try to import hybrid AI agent (optional) - temporarily disabled
+    # Try to import hybrid AI agent (optional) - now enabled
     try:
-        # from hybrid_ai_agent import HybridAIAgent  # Temporarily disabled due to quota_manager issue
-        HYBRID_AI_AVAILABLE = False
-        HybridAIAgent = None
-        print("Hybrid AI Agent temporarily disabled")
+        from hybrid_ai_agent import HybridAIAgent
+        HYBRID_AI_AVAILABLE = True
+        print("Hybrid AI Agent enabled successfully")
     except ImportError as e:
         print(f"Hybrid AI Agent not available: {e}")
         HYBRID_AI_AVAILABLE = False
@@ -853,6 +852,8 @@ def api_analyze_master(token):
         # PART 4: Web Research Context (Hybrid AI)
         try:
             print(f"Running web research...")
+            # Access global hybrid_ai_agent variable
+            global hybrid_ai_agent
             print(f"DEBUG: hybrid_ai_agent available: {hybrid_ai_agent is not None}")
             
             if hybrid_ai_agent:
@@ -869,9 +870,16 @@ def api_analyze_master(token):
                     print(f"DEBUG: Failed to initialize HybridAIAgent: {init_error}")
                     hybrid_ai_agent = None
             
-            if hybrid_ai_agent and hasattr(hybrid_ai_agent, 'research_token'):
-                print(f"DEBUG: Calling research_token for {token}")
-                web_research = hybrid_ai_agent.research_token(token)
+            if hybrid_ai_agent and hasattr(hybrid_ai_agent, 'analyze_with_web_context'):
+                print(f"DEBUG: Calling analyze_with_web_context for {token}")
+                # Use the fundamental data we already have for web context analysis
+                token_info = {
+                    'symbol': token.upper(),
+                    'price': result.get('fundamental', {}).get('price', 0),
+                    'market_cap': result.get('fundamental', {}).get('market_cap', 0),
+                    'volume': result.get('fundamental', {}).get('volume', 0)
+                }
+                web_research = hybrid_ai_agent.analyze_with_web_context(token, token_info)
                 print(f"DEBUG: Web research result keys: {web_research.keys() if isinstance(web_research, dict) else type(web_research)}")
                 
                 result['web_context'] = {
@@ -1082,153 +1090,442 @@ def create_directories():
     for dir_name in dirs:
         Path(dir_name).mkdir(exist_ok=True)
 
-def calculate_trading_levels(current_price, token, market_data=None):
-    """Calculate realistic trading levels based on technical analysis"""
+def get_historical_data(token, days=365):
+    """Fetch historical OHLCV data from CoinGecko"""
+    import requests
+    
+    try:
+        # CoinGecko OHLC endpoint
+        url = f"https://api.coingecko.com/api/v3/coins/{token}/ohlc"
+        params = {
+            'vs_currency': 'usd',
+            'days': days
+        }
+        
+        print(f"DEBUG: Fetching {days} days of OHLCV data for {token}")
+        
+        headers = {'Accept': 'application/json'}
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"DEBUG: Retrieved {len(data)} data points")
+            return data
+        else:
+            print(f"DEBUG: CoinGecko OHLC failed with status {response.status_code}")
+            return []
+            
+    except Exception as e:
+        print(f"DEBUG: Error fetching historical data: {e}")
+        return []
+
+def find_pivot_points(ohlc_data, window=20):
+    """Find pivot highs and lows from OHLCV data"""
+    if len(ohlc_data) < window * 2:
+        return []
+    
+    pivots = []
+    
+    for i in range(window, len(ohlc_data) - window):
+        current_high = ohlc_data[i][2]  # High price
+        current_low = ohlc_data[i][3]   # Low price
+        current_time = ohlc_data[i][0]  # Timestamp
+        
+        # Check for pivot high
+        is_pivot_high = True
+        for j in range(i - window, i + window + 1):
+            if j != i and ohlc_data[j][2] >= current_high:
+                is_pivot_high = False
+                break
+        
+        # Check for pivot low  
+        is_pivot_low = True
+        for j in range(i - window, i + window + 1):
+            if j != i and ohlc_data[j][3] <= current_low:
+                is_pivot_low = False
+                break
+        
+        if is_pivot_high:
+            pivots.append({
+                'price': current_high,
+                'type': 'resistance',
+                'timestamp': current_time,
+                'source': 'pivot_high'
+            })
+            
+        if is_pivot_low:
+            pivots.append({
+                'price': current_low,
+                'type': 'support',
+                'timestamp': current_time,
+                'source': 'pivot_low'
+            })
+    
+    return pivots
+
+def calculate_volume_nodes(ohlc_data, bins=50):
+    """Calculate volume profile to find high volume price areas"""
+    if not ohlc_data:
+        return []
+    
+    import numpy as np
+    
+    # Extract price and volume data
+    highs = [candle[2] for candle in ohlc_data]  # High prices
+    lows = [candle[3] for candle in ohlc_data]   # Low prices
+    volumes = [candle[4] if len(candle) > 4 else 1000000 for candle in ohlc_data]  # Volume
+    
+    # Create price range
+    min_price = min(lows)
+    max_price = max(highs)
+    
+    # Create price bins
+    price_bins = np.linspace(min_price, max_price, bins)
+    volume_at_price = np.zeros(bins - 1)
+    
+    # Distribute volume across price bins
+    for i, (high, low, volume) in enumerate(zip(highs, lows, volumes)):
+        # Assume volume is distributed evenly across the price range of the candle
+        price_range = high - low if high != low else max_price * 0.001  # Avoid division by zero
+        
+        for j in range(len(price_bins) - 1):
+            bin_low = price_bins[j]
+            bin_high = price_bins[j + 1]
+            bin_center = (bin_low + bin_high) / 2
+            
+            # Check if this price bin intersects with the candle's price range
+            if bin_center >= low and bin_center <= high:
+                volume_at_price[j] += volume / max(1, price_range)
+    
+    # Find high volume nodes (top 20% of volume)
+    volume_threshold = np.percentile(volume_at_price, 80)
+    volume_nodes = []
+    
+    for i, volume in enumerate(volume_at_price):
+        if volume >= volume_threshold:
+            price_level = (price_bins[i] + price_bins[i + 1]) / 2
+            volume_nodes.append({
+                'price': price_level,
+                'volume': volume,
+                'type': 'volume_node',
+                'source': 'volume_profile'
+            })
+    
+    return sorted(volume_nodes, key=lambda x: x['volume'], reverse=True)
+
+def find_price_clusters(ohlc_data, tolerance=0.02):
+    """Find price levels with multiple touches within tolerance"""
+    if not ohlc_data:
+        return []
+    
+    # Extract all significant price levels (highs and lows)
+    price_levels = []
+    for candle in ohlc_data:
+        price_levels.extend([candle[2], candle[3]])  # High and low
+    
+    clusters = []
+    used_prices = set()
+    
+    for base_price in price_levels:
+        if base_price in used_prices:
+            continue
+            
+        # Find all prices within tolerance of base_price
+        cluster_prices = []
+        for price in price_levels:
+            if abs(price - base_price) / base_price <= tolerance:
+                cluster_prices.append(price)
+                used_prices.add(price)
+        
+        # Only consider clusters with multiple touches
+        if len(cluster_prices) >= 3:
+            avg_price = sum(cluster_prices) / len(cluster_prices)
+            clusters.append({
+                'price': avg_price,
+                'touches': len(cluster_prices),
+                'type': 'cluster',
+                'source': 'price_clustering'
+            })
+    
+    return sorted(clusters, key=lambda x: x['touches'], reverse=True)
+
+def calculate_fibonacci_levels(ohlc_data):
+    """Calculate Fibonacci retracement levels from major swings"""
+    if len(ohlc_data) < 50:
+        return []
+    
+    # Find the major high and low in recent data
+    recent_data = ohlc_data[-100:]  # Last 100 periods
+    
+    highs = [candle[2] for candle in recent_data]
+    lows = [candle[3] for candle in recent_data]
+    
+    swing_high = max(highs)
+    swing_low = min(lows)
+    
+    # Calculate Fibonacci levels
+    fib_ratios = [0.236, 0.382, 0.5, 0.618, 0.786]
+    fib_levels = []
+    
+    price_range = swing_high - swing_low
+    
+    for ratio in fib_ratios:
+        # Retracement from high
+        retracement_level = swing_high - (price_range * ratio)
+        fib_levels.append({
+            'price': retracement_level,
+            'level': f'Fib {ratio}',
+            'type': 'fibonacci',
+            'source': 'fibonacci_retracement'
+        })
+        
+        # Extension from low
+        extension_level = swing_high + (price_range * ratio)
+        fib_levels.append({
+            'price': extension_level,
+            'level': f'Fib Ext {ratio}',
+            'type': 'fibonacci',
+            'source': 'fibonacci_extension'
+        })
+    
+    return fib_levels
+
+def find_psychological_levels(current_price):
+    """Find psychological support/resistance levels (round numbers)"""
     import math
+    
+    levels = []
+    
+    # Determine the scale based on current price
+    if current_price >= 100000:
+        scales = [10000, 25000, 50000, 100000]
+    elif current_price >= 10000:
+        scales = [1000, 2500, 5000, 10000]
+    elif current_price >= 1000:
+        scales = [100, 250, 500, 1000]
+    elif current_price >= 100:
+        scales = [10, 25, 50, 100]
+    elif current_price >= 10:
+        scales = [1, 2.5, 5, 10]
+    else:
+        scales = [0.1, 0.25, 0.5, 1]
+    
+    for scale in scales:
+        # Find nearby round numbers
+        lower_bound = current_price * 0.5
+        upper_bound = current_price * 2
+        
+        # Generate round numbers in this range
+        start = int(lower_bound / scale) * scale
+        end = int(upper_bound / scale) * scale
+        
+        current = start
+        while current <= end:
+            if current != current_price and lower_bound <= current <= upper_bound:
+                levels.append({
+                    'price': float(current),
+                    'type': 'psychological',
+                    'source': 'round_number',
+                    'scale': scale
+                })
+            current += scale
+    
+    return levels
+
+def count_touches(level_price, ohlc_data, tolerance=0.015):
+    """Count how many times price touched this level"""
+    touches = 0
+    
+    for candle in ohlc_data:
+        high = candle[2]
+        low = candle[3]
+        
+        # Check if the candle touched this level within tolerance
+        if (abs(high - level_price) / level_price <= tolerance or
+            abs(low - level_price) / level_price <= tolerance or
+            (low <= level_price <= high)):
+            touches += 1
+    
+    return touches
+
+def calculate_trading_levels(current_price, token, market_data=None):
+    """Calculate realistic trading levels based on historical technical analysis"""
+    import time
+    from datetime import datetime
+    
+    start_time = time.time()
     
     try:
         price = float(current_price)
-        print(f"DEBUG: Calculating trading levels for {token} at ${price}")
+        print(f"DEBUG: Starting real technical analysis for {token} at ${price}")
         
-        # Initialize levels structure
-        levels = {
-            'entries': [],
-            'exits': [],
-            'stop_losses': [],
-            'analysis_method': 'Advanced Technical Analysis',
-            'volatility_adjusted': True
-        }
+        # Get historical data
+        ohlc_data = get_historical_data(token, days=365)
         
-        # Calculate volatility estimate based on price level
-        if price > 100000:  # BTC-like
-            volatility = 0.04  # 4% daily volatility
-            support_strength = [0.03, 0.06, 0.10, 0.15, 0.22]
-            resistance_strength = [0.04, 0.08, 0.13, 0.20, 0.30]
-        elif price > 1000:  # ETH-like
-            volatility = 0.05  # 5% daily volatility  
-            support_strength = [0.04, 0.08, 0.12, 0.18, 0.25]
-            resistance_strength = [0.05, 0.10, 0.16, 0.24, 0.35]
-        elif price > 1:    # Regular tokens
-            volatility = 0.08  # 8% daily volatility
-            support_strength = [0.06, 0.12, 0.18, 0.25, 0.35]
-            resistance_strength = [0.08, 0.15, 0.25, 0.35, 0.50]
-        else:              # Low-cap tokens
-            volatility = 0.12  # 12% daily volatility
-            support_strength = [0.10, 0.18, 0.25, 0.35, 0.45]
-            resistance_strength = [0.12, 0.20, 0.30, 0.45, 0.65]
+        if not ohlc_data:
+            print("DEBUG: No historical data available, falling back to basic calculation")
+            return calculate_basic_levels(price)
         
-        # Calculate psychological levels (round numbers)
-        def find_psychological_levels(price):
-            """Find nearby psychological support/resistance levels"""
-            if price >= 100000:
-                return [100000, 110000, 120000, 125000, 150000]
-            elif price >= 10000:
-                return [10000, 15000, 20000, 25000, 30000]
-            elif price >= 1000:
-                return [1000, 2000, 3000, 4000, 5000]
-            elif price >= 100:
-                return [100, 200, 300, 500, 1000]
-            elif price >= 10:
-                return [10, 20, 50, 100]
-            else:
-                return [1, 5, 10, 20, 50]
+        print(f"DEBUG: Analyzing {len(ohlc_data)} historical data points")
         
+        # Find all types of levels
+        pivot_levels = find_pivot_points(ohlc_data, window=10)
+        volume_nodes = calculate_volume_nodes(ohlc_data, bins=30)
+        price_clusters = find_price_clusters(ohlc_data, tolerance=0.02)
+        fib_levels = calculate_fibonacci_levels(ohlc_data)
         psychological_levels = find_psychological_levels(price)
         
-        # ENTRY LEVELS (Support zones)
-        entry_configs = [
-            {'strength': support_strength[0], 'size': '8%', 'confidence': 88, 'type': 'Primary support'},
-            {'strength': support_strength[1], 'size': '12%', 'confidence': 82, 'type': 'Secondary support'},
-            {'strength': support_strength[2], 'size': '15%', 'confidence': 76, 'type': 'Volume cluster'},
-            {'strength': support_strength[3], 'size': '18%', 'confidence': 70, 'type': 'Fibonacci 0.618'},
-            {'strength': support_strength[4], 'size': '20%', 'confidence': 62, 'type': 'Strong accumulation zone'}
-        ]
+        print(f"DEBUG: Found {len(pivot_levels)} pivots, {len(volume_nodes)} volume nodes, {len(price_clusters)} clusters")
         
-        for i, config in enumerate(entry_configs):
-            # Mix calculated levels with psychological levels for realism
-            if i < 2 and i < len(psychological_levels):
-                # Use nearby psychological level for first two entries
-                psych_level = min(psychological_levels, key=lambda x: abs(x - price * (1 - config['strength'])))
-                if psych_level < price:
-                    entry_price = psych_level
-                else:
-                    entry_price = price * (1 - config['strength'])
-            else:
-                entry_price = price * (1 - config['strength'])
+        # Combine all levels and add strength scoring
+        all_levels = []
+        
+        for level in pivot_levels + volume_nodes + price_clusters + fib_levels + psychological_levels:
+            touches = count_touches(level['price'], ohlc_data)
             
-            # Add small random variation to make it more realistic
-            variation = volatility * 0.1 * (0.5 - (i * 0.1))  # Smaller variation for higher confidence
-            entry_price *= (1 + variation)
+            if touches >= 2:  # Minimum 2 touches for validity
+                strength_score = touches
+                
+                # Bonus for volume nodes
+                if level.get('type') == 'volume_node':
+                    strength_score += 3
+                
+                # Bonus for fibonacci levels
+                if level.get('type') == 'fibonacci':
+                    strength_score += 2
+                
+                all_levels.append({
+                    'price': level['price'],
+                    'strength': strength_score,
+                    'touches': touches,
+                    'type': level.get('type', 'unknown'),
+                    'source': level.get('source', 'unknown'),
+                    'level_info': level.get('level', '')
+                })
+        
+        # Sort by strength
+        all_levels.sort(key=lambda x: x['strength'], reverse=True)
+        
+        # Separate supports and resistances
+        supports = [l for l in all_levels if l['price'] < price * 0.98][:8]
+        resistances = [l for l in all_levels if l['price'] > price * 1.02][:8]
+        
+        # Generate entry levels from supports
+        entries = []
+        for i, support in enumerate(supports[:5]):
+            confidence = min(95, 60 + (support['strength'] * 5))
+            size_pct = 8 + (i * 2)  # 8%, 10%, 12%, 14%, 16%
             
-            levels['entries'].append({
-                'price': round(entry_price, 2 if entry_price < 100 else 0),
-                'size': config['size'],
-                'confidence': config['confidence'],
-                'reason': f"{config['type']} at {abs(price - entry_price) / price * 100:.1f}% below current"
+            reason_parts = []
+            if support['touches'] > 1:
+                reason_parts.append(f"Tested {support['touches']} times")
+            if support['type'] == 'volume_node':
+                reason_parts.append("High volume area")
+            elif support['type'] == 'fibonacci':
+                reason_parts.append(f"Fibonacci level")
+            elif support['type'] == 'psychological':
+                reason_parts.append("Psychological level")
+            
+            entries.append({
+                'price': round(support['price'], 4 if support['price'] < 1 else 2),
+                'size': f'{size_pct}%',
+                'confidence': confidence,
+                'reason': ' + '.join(reason_parts) if reason_parts else f"Strong support ({support['type']})"
             })
         
-        # EXIT LEVELS (Resistance zones)  
-        exit_configs = [
-            {'strength': resistance_strength[0], 'take': '15%', 'probability': 78, 'type': 'Immediate resistance'},
-            {'strength': resistance_strength[1], 'take': '20%', 'probability': 68, 'type': 'Previous high'},
-            {'strength': resistance_strength[2], 'take': '25%', 'probability': 58, 'type': 'Fibonacci extension'},
-            {'strength': resistance_strength[3], 'take': '25%', 'probability': 45, 'type': 'Major resistance zone'},
-            {'strength': resistance_strength[4], 'take': '15%', 'probability': 32, 'type': 'Breakout target'}
-        ]
+        # Generate exit levels from resistances
+        exits = []
+        take_profits = [15, 20, 25, 20, 15]  # Distribution of take profits
         
-        for i, config in enumerate(exit_configs):
-            # Mix calculated levels with psychological levels
-            if i < 3 and i < len(psychological_levels):
-                psych_level = min(psychological_levels, key=lambda x: abs(x - price * (1 + config['strength'])))
-                if psych_level > price:
-                    exit_price = psych_level
-                else:
-                    exit_price = price * (1 + config['strength'])
-            else:
-                exit_price = price * (1 + config['strength'])
+        for i, resistance in enumerate(resistances[:5]):
+            probability = max(30, min(85, 50 + (resistance['strength'] * 4)))
             
-            # Add realistic variation
-            variation = volatility * 0.08 * (0.3 - (i * 0.05))
-            exit_price *= (1 + variation)
+            reason_parts = []
+            if resistance['touches'] > 1:
+                reason_parts.append(f"Tested {resistance['touches']} times")
+            if resistance['type'] == 'volume_node':
+                reason_parts.append("High volume resistance")
+            elif resistance['type'] == 'fibonacci':
+                reason_parts.append(f"Fibonacci resistance")
+            elif resistance['type'] == 'psychological':
+                reason_parts.append("Psychological resistance")
             
-            levels['exits'].append({
-                'price': round(exit_price, 2 if exit_price < 100 else 0),
-                'take': config['take'],
-                'probability': config['probability'],
-                'reason': f"{config['type']} at +{(exit_price - price) / price * 100:.1f}%"
+            exits.append({
+                'price': round(resistance['price'], 4 if resistance['price'] < 1 else 2),
+                'take': f'{take_profits[i]}%',
+                'probability': probability,
+                'reason': ' + '.join(reason_parts) if reason_parts else f"Strong resistance ({resistance['type']})"
             })
         
-        # STOP LOSSES (Risk management)
-        # Calculate stop losses based on volatility and support levels
-        initial_stop = price * (1 - volatility * 2.5)  # 2.5x daily volatility
-        trailing_stop = price * (1 - volatility * 1.8)  # 1.8x daily volatility
+        # Calculate structural stop losses
+        stop_losses = []
+        if supports:
+            # Place initial stop below strongest support
+            strongest_support = supports[0]['price']
+            initial_stop = strongest_support * 0.97  # 3% below support
+            
+            # Trailing stop above second strongest support if available
+            trailing_stop = supports[1]['price'] * 0.995 if len(supports) > 1 else strongest_support * 0.985
+            
+            stop_losses = [
+                {
+                    'price': round(initial_stop, 4 if initial_stop < 1 else 2),
+                    'type': 'structural',
+                    'risk': f'-{((price - initial_stop) / price * 100):.1f}%'
+                },
+                {
+                    'price': round(trailing_stop, 4 if trailing_stop < 1 else 2),
+                    'type': 'trailing',
+                    'risk': f'-{((price - trailing_stop) / price * 100):.1f}%'
+                }
+            ]
         
-        # Adjust stops to avoid fake-outs
-        nearest_support = price * (1 - support_strength[0] * 1.2)  # Just below primary support
+        processing_time = time.time() - start_time
         
-        levels['stop_losses'] = [
-            {
-                'price': round(min(initial_stop, nearest_support), 2 if price < 100 else 0),
-                'type': 'initial',
-                'risk': f'-{((price - min(initial_stop, nearest_support)) / price * 100):.1f}%'
-            },
-            {
-                'price': round(trailing_stop, 2 if price < 100 else 0),
-                'type': 'trailing',
-                'risk': f'-{((price - trailing_stop) / price * 100):.1f}%'
+        result = {
+            'entries': entries,
+            'exits': exits,
+            'stop_losses': stop_losses,
+            'analysis_metadata': {
+                'method': 'historical_technical_analysis',
+                'data_points': len(ohlc_data),
+                'levels_analyzed': len(all_levels),
+                'supports_found': len(supports),
+                'resistances_found': len(resistances),
+                'processing_time': round(processing_time, 3)
             }
-        ]
+        }
         
-        print(f"DEBUG: Generated {len(levels['entries'])} entry levels, {len(levels['exits'])} exit levels")
-        return levels
+        print(f"DEBUG: Real technical analysis completed in {processing_time:.3f}s")
+        return result
         
     except Exception as e:
-        return {
-            'entries': [],
-            'exits': [],
-            'stop_losses': [],
-            'error': str(e)
+        print(f"DEBUG: Error in technical analysis: {e}")
+        import traceback
+        traceback.print_exc()
+        return calculate_basic_levels(price)
+
+def calculate_basic_levels(price):
+    """Fallback to basic levels if technical analysis fails"""
+    return {
+        'entries': [
+            {'price': round(price * 0.95, 2), 'size': '10%', 'confidence': 70, 'reason': 'Basic support level'},
+            {'price': round(price * 0.90, 2), 'size': '15%', 'confidence': 65, 'reason': 'Secondary support'},
+            {'price': round(price * 0.85, 2), 'size': '20%', 'confidence': 60, 'reason': 'Strong support zone'}
+        ],
+        'exits': [
+            {'price': round(price * 1.10, 2), 'take': '25%', 'probability': 60, 'reason': 'Basic resistance'},
+            {'price': round(price * 1.20, 2), 'take': '35%', 'probability': 45, 'reason': 'Major resistance'},
+            {'price': round(price * 1.30, 2), 'take': '25%', 'probability': 30, 'reason': 'Extension target'}
+        ],
+        'stop_losses': [
+            {'price': round(price * 0.88, 2), 'type': 'initial', 'risk': '-12%'}
+        ],
+        'analysis_metadata': {
+            'method': 'basic_fallback',
+            'note': 'Historical data unavailable'
         }
+    }
 
 def generate_strategies(analysis_result):
     """Generate personalized trading strategies based on analysis"""
