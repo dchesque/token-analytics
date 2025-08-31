@@ -158,6 +158,103 @@
             background: var(--error-light);
             color: var(--error-color);
         }
+
+        .no-data-notice {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .no-data-notice i {
+            font-size: 2rem;
+            color: var(--warning-color);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .no-data-notice p {
+            margin: 0.5rem 0;
+            font-weight: 500;
+        }
+
+        .no-data-notice small {
+            color: var(--text-tertiary);
+            font-size: 0.8rem;
+        }
+
+        .overview-value.success {
+            color: var(--success-color);
+        }
+
+        .overview-value.warning {
+            color: var(--warning-color);
+        }
+
+        .overview-value.error {
+            color: var(--error-color);
+        }
+
+        .component-status-grid {
+            display: grid;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .component-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--border-radius-small);
+            gap: 1rem;
+        }
+
+        .component-name {
+            flex: 1;
+        }
+
+        .component-error {
+            display: block;
+            color: var(--error-color);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .fallback-warning {
+            background: linear-gradient(135deg, var(--warning-light), var(--warning-color));
+            color: var(--warning-text, white);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .fallback-warning i {
+            margin-right: 0.5rem;
+        }
+
+        .metrics-info p {
+            margin: 0.5rem 0;
+        }
+
+        .metrics-info .success {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .metrics-info .warning {
+            color: var(--warning-color);
+            font-weight: 600;
+        }
+
+        .metrics-info .error {
+            color: var(--error-color);
+            font-weight: 600;
+        }
     </style>
     
     <!-- Fonts -->
@@ -490,8 +587,21 @@
                         }
                     }
                     
-                    if (!data || !data.success) {
-                        throw new Error(data?.error || 'Analysis failed');
+                    if (!data) {
+                        throw new Error('Invalid response from server');
+                    }
+                    
+                    // Handle new structured error responses (HTTP 200 but with error data)
+                    if (!data.success) {
+                        console.warn('Analysis completed with errors:', data.error);
+                        // For master analysis, we should still try to display partial results
+                        if (data.partial_data || data.components) {
+                            data.fallback_used = true;
+                            data.fallback_message = data.error || 'Analysis completed with limited data';
+                            // Continue with partial data rather than throwing
+                        } else {
+                            throw new Error(data.error || 'Analysis failed');
+                        }
                     }
                     
                     // Add fallback indicator to data
@@ -581,6 +691,10 @@
                 const processingTime = data.processing_time || 0;
                 const classification = data.fundamental?.classification || 'Unknown';
                 
+                // Add status indicators for health
+                const healthClass = completionRate >= 80 ? 'success' : completionRate >= 50 ? 'warning' : 'error';
+                const statusText = data.fallback_used ? 'Partial Data' : data.success ? 'Complete' : 'Limited';
+                
                 container.innerHTML = `
                     <div class="overview-card">
                         <span class="overview-value">${score}/10</span>
@@ -591,12 +705,16 @@
                         <span class="overview-label">Classification</span>
                     </div>
                     <div class="overview-card">
-                        <span class="overview-value">${completionRate}%</span>
+                        <span class="overview-value ${healthClass}">${completionRate}%</span>
                         <span class="overview-label">Completion Rate</span>
                     </div>
                     <div class="overview-card">
                         <span class="overview-value">${processingTime}s</span>
                         <span class="overview-label">Processing Time</span>
+                    </div>
+                    <div class="overview-card">
+                        <span class="overview-value component-status ${data.success ? 'completed' : 'fallback'}">${statusText}</span>
+                        <span class="overview-label">Analysis Status</span>
                     </div>
                 `;
             }
@@ -606,29 +724,61 @@
                 const components = data.components || {};
                 
                 let componentStatus = '';
-                Object.entries(components).forEach(([name, status]) => {
-                    const statusClass = status.status || 'unknown';
-                    componentStatus += `
-                        <p><strong>${name.replace('_', ' ').toUpperCase()}:</strong> 
-                        <span class="component-status ${statusClass}">${statusClass}</span></p>
-                    `;
-                });
+                const componentEntries = Object.entries(components);
+                
+                if (componentEntries.length === 0) {
+                    componentStatus = '<p class="no-data">No component status information available</p>';
+                } else {
+                    componentEntries.forEach(([name, status]) => {
+                        const statusData = typeof status === 'object' ? status : { status: status };
+                        const statusClass = statusData.status || 'unknown';
+                        const displayName = name.replace(/_/g, ' ').toUpperCase();
+                        
+                        componentStatus += `
+                            <div class="component-row">
+                                <span class="component-name"><strong>${displayName}:</strong></span>
+                                <span class="component-status ${statusClass}">${statusClass}</span>
+                                ${statusData.error ? `<small class="component-error">Error: ${statusData.error}</small>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+                
+                // Add warning if using fallback data
+                const fallbackWarning = data.fallback_used ? `
+                    <div class="fallback-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Fallback Mode Active:</strong> ${data.fallback_message || 'Using limited analysis'}
+                    </div>
+                ` : '';
                 
                 container.innerHTML = `
+                    ${fallbackWarning}
                     <h4>Analysis Components Status</h4>
-                    ${componentStatus}
+                    <div class="component-status-grid">
+                        ${componentStatus}
+                    </div>
                     <h4>Key Metrics</h4>
-                    <p><strong>Token:</strong> ${data.token}</p>
-                    <p><strong>Processing Time:</strong> ${data.processing_time}s</p>
-                    <p><strong>Completion Rate:</strong> ${data.completion_rate}%</p>
-                    <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                    <div class="metrics-info">
+                        <p><strong>Token:</strong> ${data.token || 'Unknown'}</p>
+                        <p><strong>Processing Time:</strong> ${data.processing_time || 0}s</p>
+                        <p><strong>Completion Rate:</strong> <span class="${data.completion_rate >= 80 ? 'success' : data.completion_rate >= 50 ? 'warning' : 'error'}">${data.completion_rate || 0}%</span></p>
+                        <p><strong>Timestamp:</strong> ${data.timestamp || new Date().toISOString()}</p>
+                        <p><strong>Analysis Status:</strong> <span class="component-status ${data.success ? 'completed' : 'fallback'}">${data.success ? 'Successful' : 'Partial/Fallback'}</span></p>
+                    </div>
                 `;
             }
 
             updateFundamentalTab(fundamental) {
                 const container = document.getElementById('fundamental-content');
                 if (!fundamental) {
-                    container.innerHTML = '<p>Fundamental analysis data not available</p>';
+                    container.innerHTML = `
+                        <div class="no-data-notice">
+                            <i class="fas fa-info-circle"></i>
+                            <p>Fundamental analysis data not available</p>
+                            <small>This may be due to component initialization issues or fallback mode</small>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -645,7 +795,7 @@
                     
                     <h4>Strengths</h4>
                     <ul>
-                        ${strengths.map(s => `<li>${s}</li>`).join('')}
+                        ${strengths.length > 0 ? strengths.map(s => `<li>${s}</li>`).join('') : '<li>No strengths data available</li>'}
                     </ul>
                     
                     ${risks.length > 0 ? `
@@ -653,14 +803,20 @@
                         <ul>
                             ${risks.map(r => `<li>${r}</li>`).join('')}
                         </ul>
-                    ` : ''}
+                    ` : '<h4>Risks</h4><ul><li>No risk data available</li></ul>'}
                 `;
             }
 
             updateTechnicalTab(technical) {
                 const container = document.getElementById('technical-content');
                 if (!technical) {
-                    container.innerHTML = '<p>Technical analysis data not available</p>';
+                    container.innerHTML = `
+                        <div class="no-data-notice">
+                            <i class="fas fa-chart-line"></i>
+                            <p>Technical analysis data not available</p>
+                            <small>Technical indicators may be unavailable due to fallback mode or component errors</small>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -684,7 +840,13 @@
             updateTradingTab(tradingLevels) {
                 const container = document.getElementById('trading-content');
                 if (!tradingLevels) {
-                    container.innerHTML = '<p>Trading levels data not available</p>';
+                    container.innerHTML = `
+                        <div class="no-data-notice">
+                            <i class="fas fa-exchange-alt"></i>
+                            <p>Trading levels data not available</p>
+                            <small>Entry/exit levels require full component initialization</small>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -762,7 +924,13 @@
             updateAIInsightsTab(aiInsights) {
                 const container = document.getElementById('ai-insights-content');
                 if (!aiInsights) {
-                    container.innerHTML = '<p>AI insights data not available</p>';
+                    container.innerHTML = `
+                        <div class="no-data-notice">
+                            <i class="fas fa-robot"></i>
+                            <p>AI insights data not available</p>
+                            <small>AI analysis requires active model connection and may be limited in fallback mode</small>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -793,7 +961,13 @@
             updateStrategiesTab(strategies) {
                 const container = document.getElementById('strategies-content');
                 if (!strategies) {
-                    container.innerHTML = '<p>Trading strategies data not available</p>';
+                    container.innerHTML = `
+                        <div class="no-data-notice">
+                            <i class="fas fa-brain"></i>
+                            <p>Trading strategies data not available</p>
+                            <small>Strategy recommendations require complete analysis components</small>
+                        </div>
+                    `;
                     return;
                 }
                 
