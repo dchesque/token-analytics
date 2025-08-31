@@ -152,7 +152,11 @@ class QuotaManager:
         except Exception as e:
             print(f"Warning: Could not load quota data: {e}")
         
-        # Create default quotas
+        # Create default quotas (always executed if file doesn't exist or on error)
+        return self._create_default_quotas()
+    
+    def _create_default_quotas(self) -> Dict[APIProvider, APIQuota]:
+        """Create default quota configuration"""
         quotas = {}
         for provider, config in self.api_configs.items():
             quotas[provider] = APIQuota(
@@ -167,8 +171,20 @@ class QuotaManager:
                 last_hour_reset=datetime.now().replace(minute=0, second=0).isoformat()
             )
         
-        self._save_quotas()
+        self._save_quotas_dict(quotas)
         return quotas
+    
+    def _save_quotas_dict(self, quotas: Dict[APIProvider, APIQuota]):
+        """Save quotas dictionary to file"""
+        try:
+            data = {}
+            for provider, quota in quotas.items():
+                data[provider.value] = asdict(quota)
+            
+            with open(self.quota_file, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"Warning: Could not save quota data: {e}")
     
     def _load_usage_history(self) -> List[SearchRequest]:
         """Load usage history from file"""

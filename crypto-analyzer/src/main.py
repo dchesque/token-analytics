@@ -65,12 +65,12 @@ def save_report(result, format_type='json'):
             f.write("=" * 60 + "\n\n")
             
             if not result['passed_elimination']:
-                f.write("❌ REJEITADO - Não passou nos critérios eliminatórios\n\n")
+                f.write("ERRO: REJEITADO - Não passou nos critérios eliminatórios\n\n")
                 f.write("Motivos da rejeição:\n")
                 for reason in result.get('elimination_reasons', []):
                     f.write(f"• {reason}\n")
             else:
-                f.write(f"✅ DECISÃO: {result['decision']}\n")
+                f.write(f"OK DECISÃO: {result['decision']}\n")
                 f.write(f"📊 Score: {result['score']}/10\n\n")
                 
                 if result.get('analysis'):
@@ -83,7 +83,7 @@ def save_report(result, format_type='json'):
                         f.write("\n")
                     
                     if analysis.get('weaknesses'):
-                        f.write("⚠️ PONTOS FRACOS:\n")
+                        f.write("WARN PONTOS FRACOS:\n")
                         for weakness in analysis['weaknesses']:
                             f.write(f"• {weakness}\n")
                         f.write("\n")
@@ -130,7 +130,7 @@ def display_hype_panel(hype_data, token):
     content = [
         f"{hype_data.get('hype_level', '😴 NORMAL')}",
         f"📊 Score de Hype: {hype_data.get('hype_score', 0)}/100",
-        f"⚠️ Risco: {hype_data.get('hype_risk', 'Sem sinais')}",
+        f"WARN Risco: {hype_data.get('hype_risk', 'Sem sinais')}",
         ""
     ]
     
@@ -386,7 +386,7 @@ def show_help():
     # Add hybrid AI commands if available
     if HYBRID_AVAILABLE and HYBRID_MODE_ENABLED:
         help_text += (
-            "\n[bold green]🤖 Modo Híbrido IA (Novo!):[/bold green]\n"
+            "\n[bold green]Modo Híbrido IA (Novo!):[/bold green]\n"
             "  python main.py bitcoin --hybrid               # Análise híbrida (quant + web)\n"
             "  python main.py --hybrid --compare bitcoin eth # Comparação híbrida\n"
             "  python main.py --hybrid --deep-research BTC   # Research profundo\n"
@@ -400,7 +400,7 @@ def show_help():
         )
     elif not HYBRID_AVAILABLE:
         help_text += (
-            "\n[bold yellow]🤖 Modo Híbrido IA:[/bold yellow]\n"
+            "\n[bold yellow]Modo Híbrido IA:[/bold yellow]\n"
             "  [dim]Não disponível - instale dependências:[/dim]\n"
             "  [dim]pip install tavily-python beautifulsoup4 textblob[/dim]\n"
         )
@@ -454,7 +454,7 @@ def show_api_status():
     
     # Show Hybrid AI status
     if HYBRID_AVAILABLE:
-        console.print(f"\n[bold green]🤖 Modo Híbrido IA:[/bold green]")
+        console.print(f"\n[bold green]Modo Híbrido IA:[/bold green]")
         
         if HYBRID_MODE_ENABLED:
             available_apis = HybridConfig.get_available_apis()
@@ -464,7 +464,7 @@ def show_api_status():
             from config import API_AVAILABILITY
             for api_name, is_available in API_AVAILABILITY.items():
                 if is_available:
-                    console.print(f"[green] ✓[/green] {api_name.replace('_', ' ').title()}: Disponível")
+                    console.print(f"[green] +[/green] {api_name.replace('_', ' ').title()}: Disponível")
                 else:
                     console.print(f"[yellow] --[/yellow] {api_name.replace('_', ' ').title()}: Não configurado")
                     
@@ -474,7 +474,7 @@ def show_api_status():
         else:
             console.print(f"[yellow]--[/yellow] Híbrido: Desabilitado (configure HYBRID_MODE_ENABLED=true)")
     else:
-        console.print(f"\n[yellow]🤖 Modo Híbrido IA:[/yellow]")
+        console.print(f"\n[yellow]Modo Híbrido IA:[/yellow]")
         console.print(f"[yellow]--[/yellow] Não disponível (instale dependências)")
     
     if not ENABLE_LUNARCRUSH:
@@ -496,10 +496,10 @@ def perform_hybrid_analysis(token: str, analysis_type: str = "comprehensive") ->
     """Perform hybrid analysis for a token"""
     
     if not HYBRID_AVAILABLE or not HYBRID_MODE_ENABLED:
-        console.print("[red]❌ Modo híbrido não disponível[/red]")
+        console.print("[red]ERRO: Modo híbrido não disponível[/red]")
         return None
     
-    console.print(f"\n[bold green]🤖 Iniciando análise híbrida: {token.upper()}[/bold green]")
+    console.print(f"\n[bold green]Iniciando análise híbrida: {token.upper()}[/bold green]")
     
     with Progress(
         SpinnerColumn(),
@@ -516,7 +516,7 @@ def perform_hybrid_analysis(token: str, analysis_type: str = "comprehensive") ->
             
             if not traditional_result or not traditional_result.get('success'):
                 progress.update(task1, completed=True)
-                console.print(f"[red]❌ Erro na análise quantitativa de {token}[/red]")
+                console.print(f"[red]ERRO: Erro na análise quantitativa de {token}[/red]")
                 return None
             
             progress.update(task1, completed=True)
@@ -559,7 +559,7 @@ def perform_hybrid_analysis(token: str, analysis_type: str = "comprehensive") ->
             
         except Exception as e:
             progress.stop()
-            console.print(f"[red]❌ Erro na análise híbrida: {e}[/red]")
+            console.print(f"[red]ERRO: Erro na análise híbrida: {e}[/red]")
             return None
 
 
@@ -567,7 +567,7 @@ def display_hybrid_result(result: dict):
     """Display hybrid analysis result using DisplayManager"""
     
     if not result or not result.get('success'):
-        console.print("[red]❌ Nenhum resultado para exibir[/red]")
+        console.print("[red]ERRO: Nenhum resultado para exibir[/red]")
         return
     
     try:
@@ -593,26 +593,26 @@ def show_hybrid_status():
     """Show detailed hybrid mode status"""
     
     if not HYBRID_AVAILABLE:
-        console.print("[red]❌ Modo híbrido não disponível[/red]")
+        console.print("[red]ERRO: Modo híbrido não disponível[/red]")
         console.print("[dim]Instale dependências: pip install tavily-python beautifulsoup4 textblob[/dim]")
         return
     
     status = HybridConfig.get_hybrid_status()
     
     console.print(Panel(
-        f"[bold green]🤖 Status do Modo Híbrido IA[/bold green]\n\n"
+        f"[bold green]Status do Modo Híbrido IA[/bold green]\n\n"
         f"[bold]Configuração:[/bold]\n"
-        f"• Habilitado: {'✅ Sim' if status['enabled'] else '❌ Não'}\n"
+        f"• Habilitado: {'[green]Sim[/green]' if status['enabled'] else '[red]Não[/red]'}\n"
         f"• APIs Disponíveis: {len(status['available_apis'])}\n"
         f"• Tokens Prioritários: {len(status['priority_tokens'])}\n\n"
         f"[bold]APIs Configuradas:[/bold]\n" +
-        '\n'.join([f"• {api.title().replace('_', ' ')}: ✅" for api in status['available_apis']]) + "\n\n"
+        '\n'.join([f"• {api.title().replace('_', ' ')}: [green]OK[/green]" for api in status['available_apis']]) + "\n\n"
         f"[bold]Cache:[/bold]\n"
         f"• Web Research: {status['cache_settings']['web_research']}s\n"
         f"• Sentiment: {status['cache_settings']['sentiment']}s\n"
         f"• News: {status['cache_settings']['news']}s\n\n"
         f"[bold]Features:[/bold]\n" +
-        '\n'.join([f"• {feature.replace('_', ' ').title()}: {'✅' if enabled else '❌'}" 
+        '\n'.join([f"• {feature.replace('_', ' ').title()}: {'[green]OK[/green]' if enabled else '[red]OFF[/red]'}" 
                   for feature, enabled in status['features'].items()]),
         title="Hybrid AI Status",
         border_style="green"
@@ -623,7 +623,7 @@ def show_quota_status():
     """Show API quota status"""
     
     if not HYBRID_AVAILABLE:
-        console.print("[red]❌ Modo híbrido não disponível - quotas não aplicáveis[/red]")
+        console.print("[red]ERRO: Modo híbrido não disponível - quotas não aplicáveis[/red]")
         return
     
     status = quota_manager.get_quota_status()
@@ -639,13 +639,13 @@ def show_quota_status():
     for api_name, api_status in status['providers'].items():
         # Status indicator
         if not api_status['api_key_configured']:
-            status_indicator = "[red]❌ Sem key[/red]"
+            status_indicator = "[red]ERRO: Sem key[/red]"
         elif api_status['monthly_remaining'] <= 0:
-            status_indicator = "[red]❌ Esgotado[/red]"
+            status_indicator = "[red]ERRO: Esgotado[/red]"
         elif api_status['hourly_remaining'] <= 0:
-            status_indicator = "[yellow]⚠️ Rate limit[/yellow]"
+            status_indicator = "[yellow]WARN Rate limit[/yellow]"
         else:
-            status_indicator = "[green]✅ Ativo[/green]"
+            status_indicator = "[green]OK Ativo[/green]"
         
         # Daily usage
         daily_usage = f"{api_status['monthly_usage']}/{api_status['monthly_limit']}"
@@ -681,14 +681,14 @@ def hybrid_comparison(tokens: list, analysis_focus: str = "comprehensive"):
     """Perform hybrid comparison of multiple tokens"""
     
     if not HYBRID_AVAILABLE or not HYBRID_MODE_ENABLED:
-        console.print("[red]❌ Modo híbrido não disponível para comparação[/red]")
+        console.print("[red]ERRO: Modo híbrido não disponível para comparação[/red]")
         return
     
     if len(tokens) < 2:
-        console.print("[red]❌ Pelo menos 2 tokens necessários para comparação híbrida[/red]")
+        console.print("[red]ERRO: Pelo menos 2 tokens necessários para comparação híbrida[/red]")
         return
     
-    console.print(f"\n[bold green]🤖 Comparação Híbrida: {', '.join(tokens).upper()}[/bold green]")
+    console.print(f"\n[bold green]Comparação Híbrida: {', '.join(tokens).upper()}[/bold green]")
     
     results = []
     
@@ -708,7 +708,7 @@ def hybrid_comparison(tokens: list, analysis_focus: str = "comprehensive"):
             progress.update(task, completed=True)
     
     if not results:
-        console.print("[red]❌ Nenhum resultado obtido para comparação[/red]")
+        console.print("[red]ERRO: Nenhum resultado obtido para comparação[/red]")
         return
     
     # Display comparison results
@@ -804,7 +804,7 @@ def main():
         
         elif command == '--compare':
             if len(sys.argv) < 4:
-                console.print("[red]❌ Uso: python main.py --compare token1 token2 [token3 ...][/red]")
+                console.print("[red]ERRO: Uso: python main.py --compare token1 token2 [token3 ...][/red]")
                 return
             
             tokens = sys.argv[2:]
@@ -820,7 +820,7 @@ def main():
         
         elif command == '--watch':
             if len(sys.argv) < 3:
-                console.print("[red]❌ Uso: python main.py --watch token1 [token2 ...] [minutos][/red]")
+                console.print("[red]ERRO: Uso: python main.py --watch token1 [token2 ...] [minutos][/red]")
                 return
             
             # Separar tokens de intervalo
@@ -835,7 +835,7 @@ def main():
                     tokens.append(arg)
             
             if not tokens:
-                console.print("[red]❌ Pelo menos um token deve ser especificado[/red]")
+                console.print("[red]ERRO: Pelo menos um token deve ser especificado[/red]")
                 return
             
             enhanced = EnhancedAnalyzer()
@@ -884,7 +884,7 @@ def main():
                         hybrid_comparison(remaining_args, analysis_focus)
                         return
                     else:
-                        console.print("[red]❌ Uso: python main.py --hybrid --compare token1 token2 [token3 ...][/red]")
+                        console.print("[red]ERRO: Uso: python main.py --hybrid --compare token1 token2 [token3 ...][/red]")
                         return
                 
                 elif arg not in ['--hybrid', '--deep-research', '--sentiment-focus', '--narrative-analysis']:
@@ -893,7 +893,7 @@ def main():
                 i += 1
             
             if not tokens_to_analyze:
-                console.print("[red]❌ Especifique pelo menos um token para análise híbrida[/red]")
+                console.print("[red]ERRO: Especifique pelo menos um token para análise híbrida[/red]")
                 console.print("[dim]Exemplo: python main.py bitcoin --hybrid[/dim]")
                 return
             
