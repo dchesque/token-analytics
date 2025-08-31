@@ -48,6 +48,32 @@ try:
     except ImportError as e:
         print(f"Hybrid AI Agent not available: {e}")
         HYBRID_AI_AVAILABLE = False
+
+    # ============= AI & WEB MODULES INTEGRATION =============
+    try:
+        from ai_insights import AIInsights
+        ai_insights_module = AIInsights()
+        print("[INIT] [OK] AI Insights module loaded")
+    except Exception as e:
+        print(f"[INIT] [WARNING] AI Insights not available: {e}")
+        ai_insights_module = None
+
+    try:
+        from web_context import WebContext
+        web_context_module = WebContext()
+        print("[INIT] [OK] Web Context module loaded")
+    except Exception as e:
+        print(f"[INIT] [WARNING] Web Context not available: {e}")
+        web_context_module = None
+
+    try:
+        from formatting_helper import FormattingHelper
+        formatter = FormattingHelper()
+        print("[INIT] [OK] Formatting helper loaded")
+    except Exception as e:
+        print(f"[INIT] [WARNING] Formatting helper not available: {e}")
+        formatter = None
+    # ============= END AI & WEB INTEGRATION =============
         HybridAIAgent = None
         
 except ImportError as e:
@@ -633,8 +659,9 @@ def api_status():
 @app.route('/health')
 def health():
     """Health check endpoint for Docker/EasyPanel"""
+    print("*** HEALTH ENDPOINT CALLED - TEST ***")
     return jsonify({
-        'status': 'healthy',
+        'status': 'healthy - MODIFIED VERSION',
         'components_loaded': COMPONENTS_LOADED,
         'ai_available': AI_INTEGRATION_AVAILABLE,
         'timestamp': datetime.now().isoformat(),
@@ -940,7 +967,9 @@ def api_analyze_master(token):
     """Master analysis endpoint - VERSÃO CORRIGIDA E ROBUSTA"""
     from datetime import datetime
     import time
+    global ai_insights_module, web_context_module, formatter
     
+    print(f"[MASTER] *** STARTING ANALYSIS FOR {token} ***")
     start_time = time.time()
     
     # Estrutura garantida
@@ -980,6 +1009,11 @@ def api_analyze_master(token):
                 }
                 result['components']['fundamental'] = {'status': 'completed'}
                 completed += 1
+            # Formatar dados para melhor legibilidade
+            if formatter:
+                formatted_data = formatter.format_fundamental(basic_data)
+                result['fundamental']['formatted'] = formatted_data
+
                 print(f"[MASTER] ✓ Fundamental completo")
             else:
                 raise Exception(basic_data.get('error', 'Análise falhou'))
@@ -1015,30 +1049,77 @@ def api_analyze_master(token):
     except Exception as e:
         result['components']['technical'] = {'status': 'error', 'error': str(e)}
     
-    # Component 3: AI Insights (opcional)
+        # Component 3: AI Insights (com dados reais)
     try:
-        result['ai_insights'] = {
-            'status': 'disabled',
-            'summary': 'AI analysis not configured',
-            'confidence': None
-        }
-        result['components']['ai_insights'] = {'status': 'disabled'}
-        
+        if ai_insights_module and 'fundamental' in result and result['fundamental'].get('data'):
+            print(f"[MASTER] Processing real AI insights for {token}...")
+            
+            # Usar dados reais do fundamental
+            real_data = result['fundamental'].get('data', {})
+            ai_result = ai_insights_module.analyze(real_data)
+            
+            # Formatar resultado se formatter disponível
+            if formatter and ai_result.get('status') == 'completed':
+                result['ai_insights'] = {
+                    'status': 'completed',
+                    'summary': ai_result.get('summary', ''),
+                    'confidence': ai_result.get('confidence', 0),
+                    'sentiment': ai_result.get('sentiment', 'NEUTRO'),
+                    'key_factors': ai_result.get('key_factors', []),
+                    'risks': ai_result.get('risks', []),
+                    'opportunities': ai_result.get('opportunities', []),
+                    'metrics': ai_result.get('metrics', {})
+                }
+            else:
+                result['ai_insights'] = ai_result
+            
+            result['components']['ai_insights'] = {'status': ai_result.get('status', 'error')}
+            
+            if ai_result.get('status') == 'completed':
+                completed += 1
+                print(f"[MASTER] ✓ AI insights completed with real data")
+        else:
+            result['ai_insights'] = {
+                'status': 'unavailable',
+                'summary': 'Aguardando dados fundamentais'
+            }
+            result['components']['ai_insights'] = {'status': 'disabled'}
+            
     except Exception as e:
-        result['components']['ai_insights'] = {'status': 'error'}
+        print(f"[MASTER] ✗ AI insights error: {e}")
+        result['ai_insights'] = {'status': 'error', 'error': str(e)}
+        result['components']['ai_insights'] = {'status': 'error', 'error': str(e)}
     
-    # Component 4: Web Context (opcional)
+    # Component 4: Web Context (dados reais da web)
     try:
-        result['web_context'] = {
-            'status': 'disabled',
-            'summary': 'Web research not configured'
-        }
-        result['components']['web_context'] = {'status': 'disabled'}
-        
+        if web_context_module:
+            print(f"[MASTER] Fetching real web context for {token}...")
+            
+            # Buscar contexto real da web
+            web_result = web_context_module.analyze(
+                token,
+                result.get('fundamental', {}).get('data', {})
+            )
+            
+            result['web_context'] = web_result
+            result['components']['web_context'] = {'status': web_result.get('status', 'error')}
+            
+            if web_result.get('status') in ['completed', 'partial']:
+                completed += 1
+                print(f"[MASTER] ✓ Web context fetched from real sources")
+        else:
+            result['web_context'] = {
+                'status': 'unavailable',
+                'summary': 'Módulo de contexto web não disponível'
+            }
+            result['components']['web_context'] = {'status': 'disabled'}
+            
     except Exception as e:
-        result['components']['web_context'] = {'status': 'error'}
+        print(f"[MASTER] ✗ Web context error: {e}")
+        result['web_context'] = {'status': 'error', 'error': str(e)}
+        result['components']['web_context'] = {'status': 'error', 'error': str(e)}
     
-    # Component 5: Trading Levels
+# Component 5: Trading Levels
     try:
         current_price = result.get('fundamental', {}).get('data', {}).get('price', 100)
         if current_price:
