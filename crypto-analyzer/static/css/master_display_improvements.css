@@ -1,0 +1,132 @@
+/* master_display_improvements.css */
+
+/* Melhorias para exibição de dados */
+.analysis-content {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.metric .label {
+    color: #888;
+    font-size: 0.9em;
+}
+
+.metric .value {
+    font-weight: bold;
+    color: #fff;
+}
+
+.trading-levels .levels-list {
+    margin: 10px 0;
+}
+
+.level-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.ai-insights .summary {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.insight-item {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.strategies {
+    display: grid;
+    gap: 20px;
+}
+
+.strategy-card {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.strategy-card.conservative {
+    border-left-color: #3498db;
+}
+
+.strategy-card.moderate {
+    border-left-color: #f39c12;
+}
+
+.strategy-card.aggressive {
+    border-left-color: #e74c3c;
+}
+
+.strategy-details p {
+    margin: 8px 0;
+}
+
+/* Status indicators */
+.status-indicator {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.status-indicator.completed {
+    background: #27ae60;
+    color: white;
+}
+
+.status-indicator.error {
+    background: #e74c3c;
+    color: white;
+}
+
+.status-indicator.disabled {
+    background: #7f8c8d;
+    color: white;
+}
+
+/* Sentiment colors */
+.value.positivo, .value.muito_positivo {
+    color: #27ae60;
+}
+
+.value.negativo, .value.muito_negativo {
+    color: #e74c3c;
+}
+
+.value.neutro {
+    color: #f39c12;
+}

@@ -11,6 +11,7 @@
     
     <!-- Styles -->
     <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/master_display_improvements.css">
     <style>
         .master-tabs {
             display: flex;
@@ -1044,6 +1045,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             new MasterAnalyzer();
         });
+    </script>
+
+    <!-- Display Fix Script -->
+    <script src="/static/js/master_display_fix.js"></script>
+    <script>
+        // Sobrescrever função de display existente
+        const originalDisplayResults = window.displayResults;
+        window.displayResults = function(data) {
+            // Chamar função original se existir
+            if (typeof originalDisplayResults === 'function') {
+                originalDisplayResults.call(this, data);
+            }
+            // Aplicar correções de display
+            updateMasterDisplay(data);
+        };
     </script>
 </body>
 </html>
