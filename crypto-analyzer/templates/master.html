@@ -12,6 +12,7 @@
     <!-- Styles -->
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/master_display_improvements.css">
+    <link rel="stylesheet" href="/static/css/transparent_scoring.css">
     <style>
         .master-tabs {
             display: flex;
@@ -783,142 +784,370 @@
                     return;
                 }
                 
+                // ✨ NOVO: Check for transparent scoring data first
+                if (fundamental.transparent_scoring && typeof generateTransparentScoringHTML === 'function') {
+                    console.log('🎯 Found transparent scoring data, using new display');
+                    const transparentHTML = generateTransparentScoringHTML(fundamental.transparent_scoring);
+                    container.innerHTML = transparentHTML;
+                    return;
+                }
+                
+                // Fallback to original display
+                console.log('⚠️ Using traditional fundamental display');
                 const threeLayer = fundamental.three_layers || {};
                 const strengths = fundamental.strengths || [];
                 const risks = fundamental.risks || [];
                 
                 container.innerHTML = `
-                    <h4>Classification: ${fundamental.classification}</h4>
-                    <p><strong>Score:</strong> ${threeLayer.score}/10</p>
-                    <p><strong>Decision:</strong> ${threeLayer.decision}</p>
-                    <p><strong>Market Cap:</strong> $${(threeLayer.market_cap || 0).toLocaleString()}</p>
-                    <p><strong>Current Price:</strong> $${threeLayer.price || 0}</p>
-                    
-                    <h4>Strengths</h4>
-                    <ul>
-                        ${strengths.length > 0 ? strengths.map(s => `<li>${s}</li>`).join('') : '<li>No strengths data available</li>'}
-                    </ul>
-                    
-                    ${risks.length > 0 ? `
-                        <h4>Risks</h4>
+                    <div class="traditional-fundamental">
+                        <h4>Classification: ${fundamental.classification}</h4>
+                        <p><strong>Score:</strong> ${threeLayer.score}/10</p>
+                        <p><strong>Decision:</strong> ${threeLayer.decision}</p>
+                        <p><strong>Market Cap:</strong> $${(threeLayer.market_cap || 0).toLocaleString()}</p>
+                        <p><strong>Current Price:</strong> $${threeLayer.price || 0}</p>
+                        
+                        <h4>Strengths</h4>
                         <ul>
-                            ${risks.map(r => `<li>${r}</li>`).join('')}
+                            ${strengths.length > 0 ? strengths.map(s => `<li>${s}</li>`).join('') : '<li>No strengths data available</li>'}
                         </ul>
-                    ` : '<h4>Risks</h4><ul><li>No risk data available</li></ul>'}
+                        
+                        ${risks.length > 0 ? `
+                            <h4>Risks</h4>
+                            <ul>
+                                ${risks.map(r => `<li>${r}</li>`).join('')}
+                            </ul>
+                        ` : '<h4>Risks</h4><ul><li>No risk data available</li></ul>'}
+                    </div>
                 `;
             }
 
             updateTechnicalTab(technical) {
                 const container = document.getElementById('technical-content');
-                if (!technical) {
+                if (!technical || technical.status === 'error') {
                     container.innerHTML = `
                         <div class="no-data-notice">
                             <i class="fas fa-chart-line"></i>
                             <p>Technical analysis data not available</p>
-                            <small>Technical indicators may be unavailable due to fallback mode or component errors</small>
+                            <small>${technical?.error || 'Technical indicators require market data and component initialization'}</small>
                         </div>
                     `;
                     return;
                 }
                 
-                const indicators = technical.indicators || {};
-                const patterns = technical.patterns || [];
+                const momentum = technical.momentum || {};
+                const trend = technical.trend || {};
+                const volatility = technical.volatility || {};
+                const volume = technical.volume || {};
+                const patterns = technical.patterns || {};
+                const summary = technical.summary || {};
                 
                 container.innerHTML = `
-                    <h4>Technical Indicators</h4>
-                    <p><strong>Momentum:</strong> ${technical.momentum}</p>
-                    <p><strong>Fear & Greed Index:</strong> ${indicators.fear_greed || 0}</p>
-                    <p><strong>24h Price Change:</strong> ${indicators.price_change_24h || 0}%</p>
-                    <p><strong>7d Price Change:</strong> ${indicators.price_change_7d || 0}%</p>
+                    <div class="technical-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                        <div class="technical-section" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius);">
+                            <h4 style="color: var(--accent-color); margin-bottom: 1rem;">📊 Momentum Indicators</h4>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>RSI (14):</strong> 
+                                <div>
+                                    <span class="indicator-value" style="color: var(--accent-color); font-weight: 600;">${momentum.rsi?.value || 'N/A'}</span>
+                                    <span class="indicator-signal" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: ${momentum.rsi?.interpretation === 'OVERSOLD' ? 'var(--success-color)' : momentum.rsi?.interpretation === 'OVERBOUGHT' ? 'var(--error-color)' : 'var(--bg-secondary)'}; color: white;">${momentum.rsi?.interpretation || ''}</span>
+                                </div>
+                            </div>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>MACD:</strong>
+                                <div>
+                                    <span class="indicator-value" style="color: var(--accent-color); font-weight: 600;">${momentum.macd?.macd_line || 'N/A'}</span>
+                                    <span class="indicator-signal" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: ${momentum.macd?.signal === 'BUY' ? 'var(--success-color)' : momentum.macd?.signal === 'SELL' ? 'var(--error-color)' : 'var(--bg-secondary)'}; color: white;">${momentum.macd?.signal || 'NEUTRAL'}</span>
+                                </div>
+                            </div>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>Stochastic %K:</strong>
+                                <div>
+                                    <span class="indicator-value" style="color: var(--accent-color); font-weight: 600;">${momentum.stochastic?.k || 'N/A'}</span>
+                                    <span class="indicator-signal" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: white; background: var(--bg-secondary);">${momentum.stochastic?.signal || ''}</span>
+                                </div>
+                            </div>
+                            <div class="momentum-score" style="margin-top: 1rem; text-align: center;">
+                                <strong>Momentum Score:</strong> 
+                                <span class="score-badge" style="background: linear-gradient(45deg, var(--accent-color), var(--accent-light)); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 700;">${momentum.momentum_score || 50}/100</span>
+                            </div>
+                        </div>
+                        
+                        <div class="technical-section" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius);">
+                            <h4 style="color: var(--accent-color); margin-bottom: 1rem;">📈 Trend Analysis</h4>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>Trend Strength:</strong>
+                                <span class="trend-badge" style="padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.875rem; font-weight: 600; color: white; background: ${trend.trend_strength?.includes('UP') ? 'var(--success-color)' : trend.trend_strength?.includes('DOWN') ? 'var(--error-color)' : 'var(--bg-secondary)'};">${trend.trend_strength || 'NEUTRAL'}</span>
+                            </div>
+                            <div class="ma-grid" style="margin: 1rem 0;">
+                                <div class="ma-item" style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                                    <strong>MA20:</strong> 
+                                    <div>
+                                        <span style="color: var(--accent-color);">$${trend.moving_averages?.ma20?.value || 'N/A'}</span>
+                                        <span style="margin-left: 0.5rem; color: ${trend.moving_averages?.ma20?.position === 'ABOVE' ? 'var(--success-color)' : trend.moving_averages?.ma20?.position === 'BELOW' ? 'var(--error-color)' : 'var(--text-secondary)'};">${trend.moving_averages?.ma20?.position || ''}</span>
+                                    </div>
+                                </div>
+                                <div class="ma-item" style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                                    <strong>MA50:</strong> 
+                                    <div>
+                                        <span style="color: var(--accent-color);">$${trend.moving_averages?.ma50?.value || 'N/A'}</span>
+                                        <span style="margin-left: 0.5rem; color: ${trend.moving_averages?.ma50?.position === 'ABOVE' ? 'var(--success-color)' : trend.moving_averages?.ma50?.position === 'BELOW' ? 'var(--error-color)' : 'var(--text-secondary)'};">${trend.moving_averages?.ma50?.position || ''}</span>
+                                    </div>
+                                </div>
+                                <div class="ma-item" style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                                    <strong>MA200:</strong> 
+                                    <div>
+                                        <span style="color: var(--accent-color);">$${trend.moving_averages?.ma200?.value || 'N/A'}</span>
+                                        <span style="margin-left: 0.5rem; color: ${trend.moving_averages?.ma200?.position === 'ABOVE' ? 'var(--success-color)' : trend.moving_averages?.ma200?.position === 'BELOW' ? 'var(--error-color)' : 'var(--text-secondary)'};">${trend.moving_averages?.ma200?.position || ''}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>EMA Ribbon:</strong>
+                                <span class="ribbon-badge" style="padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.875rem; font-weight: 600; color: white; background: ${trend.ema_ribbon === 'BULLISH' ? 'var(--success-color)' : trend.ema_ribbon === 'BEARISH' ? 'var(--error-color)' : 'var(--bg-secondary)'};">${trend.ema_ribbon || 'NEUTRAL'}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="technical-section" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius);">
+                            <h4 style="color: var(--accent-color); margin-bottom: 1rem;">⚡ Volatility & Volume</h4>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>Bollinger Position:</strong>
+                                <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: white; background: var(--bg-secondary);">${volatility.bollinger_bands?.position || 'N/A'}</span>
+                            </div>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>ATR:</strong> 
+                                <div>
+                                    <span style="color: var(--accent-color);">${volatility.atr?.percentage || 'N/A'}</span>
+                                    <span style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: white; background: ${volatility.volatility_regime === 'EXTREME' ? 'var(--error-color)' : volatility.volatility_regime === 'HIGH' ? 'var(--warning-color)' : 'var(--success-color)'};">${volatility.volatility_regime || 'NORMAL'}</span>
+                                </div>
+                            </div>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>Volume Trend:</strong>
+                                <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: white; background: ${volume.volume_trend === 'INCREASING' ? 'var(--success-color)' : volume.volume_trend === 'DECREASING' ? 'var(--error-color)' : 'var(--bg-secondary)'};">${volume.volume_trend || 'STABLE'}</span>
+                            </div>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>OBV Trend:</strong>
+                                <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: white; background: ${volume.obv?.trend === 'BULLISH' ? 'var(--success-color)' : volume.obv?.trend === 'BEARISH' ? 'var(--error-color)' : 'var(--bg-secondary)'};">${volume.obv?.trend || 'NEUTRAL'}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="technical-section" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius);">
+                            <h4 style="color: var(--accent-color); margin-bottom: 1rem;">🔍 Pattern Recognition</h4>
+                            <div class="pattern-list" style="margin: 0.75rem 0;">
+                                <strong>Chart Patterns:</strong><br>
+                                ${patterns.chart_patterns?.length > 0 ? 
+                                    patterns.chart_patterns.map(p => `<span style="display: inline-block; margin: 0.25rem; padding: 0.25rem 0.5rem; background: var(--accent-light); color: var(--accent-color); border-radius: 15px; font-size: 0.75rem;">${p.replace(/_/g, ' ')}</span>`).join('') :
+                                    '<span style="color: var(--text-secondary); font-style: italic;">No patterns detected</span>'
+                                }
+                            </div>
+                            <div class="pattern-list" style="margin: 0.75rem 0;">
+                                <strong>Candlestick Patterns:</strong><br>
+                                ${patterns.candlestick_patterns?.length > 0 ?
+                                    patterns.candlestick_patterns.map(p => `<span style="display: inline-block; margin: 0.25rem; padding: 0.25rem 0.5rem; background: var(--success-light); color: var(--success-color); border-radius: 15px; font-size: 0.75rem;">${p}</span>`).join('') :
+                                    '<span style="color: var(--text-secondary); font-style: italic;">No candlestick patterns</span>'
+                                }
+                            </div>
+                            <div class="indicator-row" style="margin: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;">
+                                <strong>Support/Resistance Tests:</strong> 
+                                <span style="color: var(--accent-color); font-weight: 600;">${patterns.support_resistance_tests || 0}</span>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <h4>Chart Patterns</h4>
-                    <ul>
-                        ${patterns.map(p => `<li>${p}</li>`).join('')}
-                    </ul>
+                    <div class="technical-summary" style="background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); padding: 2rem; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                        <h4 style="color: var(--accent-color); margin-bottom: 1rem;">📋 Overall Technical Summary</h4>
+                        <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                            <div class="summary-item" style="text-align: center;">
+                                <strong>Signal:</strong><br>
+                                <span class="signal-badge" style="display: inline-block; margin-top: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 700; color: white; background: ${summary.overall_signal?.includes('BUY') ? 'var(--success-color)' : summary.overall_signal?.includes('SELL') ? 'var(--error-color)' : 'var(--bg-secondary)'};">${summary.overall_signal || 'NEUTRAL'}</span>
+                            </div>
+                            <div class="summary-item" style="text-align: center;">
+                                <strong>Confidence:</strong><br>
+                                <span class="confidence-badge" style="display: inline-block; margin-top: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 700; color: white; background: ${summary.confidence === 'HIGH' ? 'var(--success-color)' : summary.confidence === 'MEDIUM' ? 'var(--warning-color)' : 'var(--error-color)'};">${summary.confidence || 'LOW'}</span>
+                            </div>
+                            <div class="summary-item" style="text-align: center;">
+                                <strong>Bullish Signals:</strong><br>
+                                <span class="signal-count" style="display: inline-block; margin-top: 0.5rem; padding: 0.5rem 1rem; border-radius: 50%; background: var(--success-color); color: white; font-weight: 700;">${summary.bullish_signals || 0}</span>
+                            </div>
+                            <div class="summary-item" style="text-align: center;">
+                                <strong>Bearish Signals:</strong><br>
+                                <span class="signal-count" style="display: inline-block; margin-top: 0.5rem; padding: 0.5rem 1rem; border-radius: 50%; background: var(--error-color); color: white; font-weight: 700;">${summary.bearish_signals || 0}</span>
+                            </div>
+                        </div>
+                        <div class="recommendation" style="background: var(--bg-card); padding: 1rem; border-radius: var(--border-radius); border-left: 4px solid var(--accent-color);">
+                            <strong>💡 Recommendation:</strong> ${summary.recommendation || 'No specific recommendation available'}
+                        </div>
+                    </div>
                 `;
             }
 
             updateTradingTab(tradingLevels) {
                 const container = document.getElementById('trading-content');
-                if (!tradingLevels) {
+                if (!tradingLevels || tradingLevels.status === 'error') {
                     container.innerHTML = `
                         <div class="no-data-notice">
                             <i class="fas fa-exchange-alt"></i>
                             <p>Trading levels data not available</p>
-                            <small>Entry/exit levels require full component initialization</small>
+                            <small>${tradingLevels?.error || 'Entry/exit levels require full component initialization'}</small>
                         </div>
                     `;
                     return;
                 }
                 
-                const entries = tradingLevels.entries || [];
-                const exits = tradingLevels.exits || [];
-                const stopLosses = tradingLevels.stop_losses || [];
+                const entryPoints = tradingLevels.entry_points || [];
+                const takeProfitTargets = tradingLevels.take_profit_targets || [];
+                const stopLoss = tradingLevels.stop_loss || {};
+                const positionSizing = tradingLevels.position_sizing || {};
+                const marketContext = tradingLevels.market_context || {};
                 
                 container.innerHTML = `
-                    <h4>Entry Levels</h4>
-                    <table class="trading-levels-table">
-                        <thead>
-                            <tr>
-                                <th>Price</th>
-                                <th>Size</th>
-                                <th>Confidence</th>
-                                <th>Reason</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${entries.map(entry => `
-                                <tr>
-                                    <td>$${entry.price}</td>
-                                    <td>${entry.size}</td>
-                                    <td>${entry.confidence}%</td>
-                                    <td>${entry.reason}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                    <div class="trading-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div class="context-card" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
+                            <h5 style="color: var(--accent-color); margin-bottom: 0.5rem;">💰 Current Price</h5>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">$${marketContext.current_price || 'N/A'}</div>
+                        </div>
+                        <div class="context-card" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
+                            <h5 style="color: var(--accent-color); margin-bottom: 0.5rem;">📊 Volatility</h5>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">${marketContext.volatility || 'N/A'}%</div>
+                        </div>
+                        <div class="context-card" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
+                            <h5 style="color: var(--accent-color); margin-bottom: 0.5rem;">📈 Trend</h5>
+                            <div style="font-size: 1.2rem; font-weight: 600; color: ${marketContext.trend?.includes('UP') ? 'var(--success-color)' : marketContext.trend?.includes('DOWN') ? 'var(--error-color)' : 'var(--text-secondary)'};">${marketContext.trend || 'NEUTRAL'}</div>
+                        </div>
+                        <div class="context-card" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
+                            <h5 style="color: var(--accent-color); margin-bottom: 0.5rem;">🎯 Kelly Criterion</h5>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">${positionSizing.kelly_criterion || 'N/A'}%</div>
+                        </div>
+                    </div>
                     
-                    <h4>Exit Targets</h4>
-                    <table class="trading-levels-table">
-                        <thead>
-                            <tr>
-                                <th>Price</th>
-                                <th>Take Profit</th>
-                                <th>Probability</th>
-                                <th>Reason</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${exits.map(exit => `
-                                <tr>
-                                    <td>$${exit.price}</td>
-                                    <td>${exit.take}</td>
-                                    <td>${exit.probability}%</td>
-                                    <td>${exit.reason}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                    <div class="trading-sections" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                        <div class="entry-section">
+                            <h4 style="color: var(--success-color); margin-bottom: 1rem;">📈 Entry Points</h4>
+                            <div class="trading-table-container" style="background: var(--bg-card); border-radius: var(--border-radius); overflow: hidden; border: 1px solid var(--border-color);">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead style="background: var(--bg-secondary);">
+                                        <tr>
+                                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color);">Price</th>
+                                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color);">Size</th>
+                                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color);">Confidence</th>
+                                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color);">R:R</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${entryPoints.map((entry, index) => `
+                                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                                <td style="padding: 0.75rem; font-weight: 600; color: var(--success-color);">$${entry.price}</td>
+                                                <td style="padding: 0.75rem;">${entry.position_size}</td>
+                                                <td style="padding: 0.75rem;">
+                                                    <span style="padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: white; background: ${entry.confidence === 'HIGH' ? 'var(--success-color)' : entry.confidence === 'MEDIUM' ? 'var(--warning-color)' : 'var(--error-color)'};">${entry.confidence}</span>
+                                                </td>
+                                                <td style="padding: 0.75rem; font-weight: 600; color: var(--accent-color);">${entry.risk_reward}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                                                <td colspan="4" style="padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--text-secondary); font-style: italic;">${entry.reason}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="exit-section">
+                            <h4 style="color: var(--warning-color); margin-bottom: 1rem;">🎯 Take Profit Targets</h4>
+                            <div class="trading-table-container" style="background: var(--bg-card); border-radius: var(--border-radius); overflow: hidden; border: 1px solid var(--border-color);">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead style="background: var(--bg-secondary);">
+                                        <tr>
+                                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color);">Price</th>
+                                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color);">Gain</th>
+                                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color);">Probability</th>
+                                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color);">Exit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${takeProfitTargets.map((target, index) => `
+                                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                                <td style="padding: 0.75rem; font-weight: 600; color: var(--warning-color);">$${target.price}</td>
+                                                <td style="padding: 0.75rem; font-weight: 600; color: var(--success-color);">${target.percentage_gain}</td>
+                                                <td style="padding: 0.75rem;">
+                                                    <span style="padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: white; background: ${parseFloat(target.probability) > 60 ? 'var(--success-color)' : parseFloat(target.probability) > 40 ? 'var(--warning-color)' : 'var(--error-color)'};">${target.probability}</span>
+                                                </td>
+                                                <td style="padding: 0.75rem; color: var(--accent-color); font-weight: 600;">${target.partial_exit}</td>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-light);">
+                                                <td colspan="4" style="padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--text-secondary); font-style: italic;">${target.reason}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <h4>Stop Losses</h4>
-                    <table class="trading-levels-table">
-                        <thead>
-                            <tr>
-                                <th>Price</th>
-                                <th>Type</th>
-                                <th>Risk</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${stopLosses.map(stop => `
-                                <tr>
-                                    <td>$${stop.price}</td>
-                                    <td>${stop.type}</td>
-                                    <td>${stop.risk}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                    <div class="risk-management" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div class="stop-loss-section">
+                            <h4 style="color: var(--error-color); margin-bottom: 1rem;">🛡️ Stop Loss Management</h4>
+                            <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <strong>Initial Stop Loss:</strong>
+                                        <span style="color: var(--error-color); font-weight: 600; font-size: 1.1rem;">$${stopLoss.initial?.price || 'N/A'}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.875rem; color: var(--text-secondary);">Risk:</span>
+                                        <span style="color: var(--error-color); font-weight: 600;">${stopLoss.initial?.percentage_loss || 'N/A'}</span>
+                                    </div>
+                                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); font-style: italic;">
+                                        ${stopLoss.initial?.reason || 'No reason provided'}
+                                    </div>
+                                </div>
+                                
+                                <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <strong>Trailing Stop:</strong>
+                                        <span style="color: var(--warning-color); font-weight: 600;">${stopLoss.trailing?.trail_percentage || 'N/A'}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.875rem; color: var(--text-secondary);">Activation:</span>
+                                        <span style="color: var(--success-color); font-weight: 600;">${stopLoss.trailing?.activation || 'N/A'}</span>
+                                    </div>
+                                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); font-style: italic;">
+                                        ${stopLoss.trailing?.reason || 'No reason provided'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="position-sizing-section">
+                            <h4 style="color: var(--accent-color); margin-bottom: 1rem;">📐 Position Sizing</h4>
+                            <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                                <div class="sizing-grid" style="display: grid; gap: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <strong>Kelly Criterion:</strong>
+                                        <span style="color: var(--accent-color); font-weight: 600; font-size: 1.1rem;">${positionSizing.kelly_criterion || 'N/A'}%</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <strong>Recommended:</strong>
+                                        <span style="color: var(--success-color); font-weight: 600;">${positionSizing.recommended || 'N/A'}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <strong>Max Allocation:</strong>
+                                        <span style="color: var(--warning-color); font-weight: 600;">${positionSizing.max_allocation || 'N/A'}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <strong>Risk per Trade:</strong>
+                                        <span style="color: var(--error-color); font-weight: 600;">${positionSizing.risk_per_trade || 'N/A'}</span>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--border-radius-small); border-left: 4px solid var(--accent-color);">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                        <strong style="color: var(--text-primary);">💡 Sizing Strategy:</strong><br>
+                                        Use the recommended percentage for optimal risk-adjusted returns. Never exceed the maximum allocation to maintain proper diversification.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 `;
             }
 
@@ -961,46 +1190,178 @@
 
             updateStrategiesTab(strategies) {
                 const container = document.getElementById('strategies-content');
-                if (!strategies) {
+                if (!strategies || strategies.status === 'error') {
                     container.innerHTML = `
                         <div class="no-data-notice">
                             <i class="fas fa-brain"></i>
                             <p>Trading strategies data not available</p>
-                            <small>Strategy recommendations require complete analysis components</small>
+                            <small>${strategies?.error || 'Strategy recommendations require complete analysis components'}</small>
                         </div>
                     `;
                     return;
                 }
                 
+                const strategyData = strategies.strategies || strategies;
+                const primaryRec = strategies.primary_recommendation || {};
+                const marketConditions = strategies.market_conditions || {};
+                const warnings = strategies.warnings || [];
+                
+                // Helper function to get strategy color
+                const getStrategyColor = (action) => {
+                    const actionColors = {
+                        'AVOID': 'var(--error-color)',
+                        'WAIT': 'var(--warning-color)', 
+                        'DCA': 'var(--info-color)',
+                        'BUY': 'var(--success-color)',
+                        'ACCUMULATE': 'var(--success-color)',
+                        'SHORT_TERM_TRADE': 'var(--accent-color)',
+                        'SWING_TRADE': 'var(--accent-color)',
+                        'POSITION_TRADE': 'var(--success-color)'
+                    };
+                    return actionColors[action] || 'var(--text-secondary)';
+                };
+                
                 container.innerHTML = `
-                    <div class="strategy-grid">
-                        <div class="strategy-card">
-                            <h4>🛡️ Conservative Strategy</h4>
-                            <p><strong>Action:</strong> ${strategies.conservative?.action || 'Unknown'}</p>
-                            <p><strong>Position Size:</strong> ${strategies.conservative?.position_size || 'Unknown'}</p>
-                            <p><strong>Risk/Reward:</strong> ${strategies.conservative?.risk_reward || 'Unknown'}</p>
-                            <p><strong>Confidence:</strong> ${strategies.conservative?.confidence || 'Unknown'}</p>
-                            <p><strong>Description:</strong> ${strategies.conservative?.description || 'No description'}</p>
+                    ${primaryRec.recommended_strategy ? `
+                        <div class="primary-recommendation" style="background: linear-gradient(135deg, var(--accent-color), var(--accent-light)); color: white; padding: 2rem; border-radius: var(--border-radius); margin-bottom: 2rem; text-align: center;">
+                            <h3 style="margin: 0 0 1rem 0; font-size: 1.5rem;">🎯 Primary Recommendation</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.875rem; opacity: 0.9;">Strategy:</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${primaryRec.recommended_strategy}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; opacity: 0.9;">Action:</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${primaryRec.action}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; opacity: 0.9;">Conviction:</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${primaryRec.conviction}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; opacity: 0.9;">Success Probability:</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${primaryRec.success_probability}</div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: var(--border-radius-small);">
+                                <strong>Key Reason:</strong> ${primaryRec.key_reason || 'No specific reason provided'}
+                            </div>
                         </div>
-                        
-                        <div class="strategy-card">
-                            <h4>⚖️ Moderate Strategy</h4>
-                            <p><strong>Action:</strong> ${strategies.moderate?.action || 'Unknown'}</p>
-                            <p><strong>Position Size:</strong> ${strategies.moderate?.position_size || 'Unknown'}</p>
-                            <p><strong>Risk/Reward:</strong> ${strategies.moderate?.risk_reward || 'Unknown'}</p>
-                            <p><strong>Confidence:</strong> ${strategies.moderate?.confidence || 'Unknown'}</p>
-                            <p><strong>Description:</strong> ${strategies.moderate?.description || 'No description'}</p>
+                    ` : ''}
+                    
+                    ${warnings.length > 0 ? `
+                        <div class="warnings-section" style="margin-bottom: 2rem;">
+                            <h4 style="color: var(--warning-color); margin-bottom: 1rem;">⚠️ Important Warnings</h4>
+                            <div class="warnings-grid" style="display: grid; gap: 1rem;">
+                                ${warnings.map(warning => `
+                                    <div class="warning-card" style="background: ${warning.severity === 'HIGH' ? 'var(--error-light)' : warning.severity === 'MEDIUM' ? 'var(--warning-light)' : 'var(--info-light)'}; border-left: 4px solid ${warning.severity === 'HIGH' ? 'var(--error-color)' : warning.severity === 'MEDIUM' ? 'var(--warning-color)' : 'var(--info-color)'}; padding: 1rem; border-radius: var(--border-radius);">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                            <span style="font-size: 1.25rem;">${warning.icon || '⚠️'}</span>
+                                            <strong style="color: var(--text-primary);">${warning.message}</strong>
+                                        </div>
+                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                            💡 ${warning.recommendation}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
-                        
-                        <div class="strategy-card">
-                            <h4>🚀 Aggressive Strategy</h4>
-                            <p><strong>Action:</strong> ${strategies.aggressive?.action || 'Unknown'}</p>
-                            <p><strong>Position Size:</strong> ${strategies.aggressive?.position_size || 'Unknown'}</p>
-                            <p><strong>Risk/Reward:</strong> ${strategies.aggressive?.risk_reward || 'Unknown'}</p>
-                            <p><strong>Confidence:</strong> ${strategies.aggressive?.confidence || 'Unknown'}</p>
-                            <p><strong>Description:</strong> ${strategies.aggressive?.description || 'No description'}</p>
+                    ` : ''}
+                    
+                    ${marketConditions.overall_sentiment ? `
+                        <div class="market-conditions" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 2rem;">
+                            <h4 style="color: var(--accent-color); margin-bottom: 1rem;">📊 Market Conditions Context</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                                <div class="condition-item">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Overall Sentiment:</div>
+                                    <div style="font-weight: 600; color: ${marketConditions.overall_sentiment === 'BULLISH' ? 'var(--success-color)' : marketConditions.overall_sentiment === 'BEARISH' ? 'var(--error-color)' : 'var(--text-primary)'};">${marketConditions.overall_sentiment}</div>
+                                </div>
+                                <div class="condition-item">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Volatility:</div>
+                                    <div style="font-weight: 600; color: ${marketConditions.volatility_regime === 'EXTREME' ? 'var(--error-color)' : marketConditions.volatility_regime === 'HIGH' ? 'var(--warning-color)' : 'var(--success-color)'};">${marketConditions.volatility_regime}</div>
+                                </div>
+                                <div class="condition-item">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Fear & Greed:</div>
+                                    <div style="font-weight: 600;">${marketConditions.fear_greed_index}</div>
+                                </div>
+                                <div class="condition-item">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">BTC Correlation:</div>
+                                    <div style="font-weight: 600;">${marketConditions.btc_correlation}</div>
+                                </div>
+                            </div>
                         </div>
+                    ` : ''}
+                    
+                    <div class="strategies-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+                        ${Object.entries(strategyData).map(([type, strategy]) => `
+                            <div class="strategy-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; transition: transform 0.2s ease;">
+                                <div class="strategy-header" style="background: ${getStrategyColor(strategy.action)}20; border-bottom: 1px solid var(--border-color); padding: 1.5rem;">
+                                    <h4 style="margin: 0; color: ${getStrategyColor(strategy.action)}; display: flex; align-items: center; gap: 0.5rem;">
+                                        ${type === 'conservative' ? '🛡️' : type === 'moderate' ? '⚖️' : '🚀'} ${type.charAt(0).toUpperCase() + type.slice(1)} Strategy
+                                    </h4>
+                                    <div style="margin-top: 0.5rem; font-size: 1.25rem; font-weight: 700; color: ${getStrategyColor(strategy.action)};">
+                                        ${strategy.action}
+                                    </div>
+                                </div>
+                                
+                                <div class="strategy-body" style="padding: 1.5rem;">
+                                    <div class="strategy-metrics" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                        <div>
+                                            <div style="font-size: 0.875rem; color: var(--text-secondary);">Conviction</div>
+                                            <div style="font-weight: 600; color: ${strategy.conviction === 'HIGH' ? 'var(--success-color)' : strategy.conviction === 'MEDIUM' ? 'var(--warning-color)' : 'var(--error-color)'};">${strategy.conviction}</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 0.875rem; color: var(--text-secondary);">Max Position</div>
+                                            <div style="font-weight: 600; color: var(--accent-color);">${strategy.position_sizing?.maximum || 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="rationale" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--border-radius-small); margin-bottom: 1rem;">
+                                        <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">📋 Rationale:</div>
+                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">${strategy.rationale}</div>
+                                    </div>
+                                    
+                                    ${strategy.execution_plan?.immediate_action ? `
+                                        <div class="execution-plan" style="margin-bottom: 1rem;">
+                                            <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">🎯 Immediate Action:</div>
+                                            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.75rem;">${strategy.execution_plan.immediate_action}</div>
+                                            
+                                            ${strategy.execution_plan.specific_instructions ? `
+                                                <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">📝 Action Steps:</div>
+                                                <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                                    ${strategy.execution_plan.specific_instructions.slice(0, 3).map(instruction => `<li style="margin: 0.25rem 0;">${instruction}</li>`).join('')}
+                                                </ul>
+                                            ` : ''}
+                                        </div>
+                                    ` : ''}
+                                    
+                                    <div class="risk-info" style="background: var(--error-light); padding: 1rem; border-radius: var(--border-radius-small); border-left: 4px solid var(--error-color);">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.875rem;">
+                                            <div><strong>Stop Loss:</strong> ${strategy.risk_management?.stop_loss ? '$' + strategy.risk_management.stop_loss : 'TBD'}</div>
+                                            <div><strong>Position Limit:</strong> ${strategy.risk_management?.position_limit || 'TBD'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
+                    
+                    ${primaryRec.immediate_steps?.length > 0 ? `
+                        <div class="next-steps" style="background: linear-gradient(135deg, var(--success-light), var(--success-color)20); padding: 2rem; border-radius: var(--border-radius); margin-top: 2rem; border-left: 4px solid var(--success-color);">
+                            <h4 style="color: var(--success-color); margin-bottom: 1rem;">🚀 Next Steps (Recommended Strategy)</h4>
+                            <div style="display: grid; gap: 0.75rem;">
+                                ${primaryRec.immediate_steps.map((step, index) => `
+                                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                                        <div style="background: var(--success-color); color: white; width: 1.5rem; height: 1.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">${index + 1}</div>
+                                        <div style="font-size: 0.875rem; color: var(--text-primary);">${step}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                <strong>Expected Timeline:</strong> ${primaryRec.expected_timeline || 'To be determined'}
+                            </div>
+                        </div>
+                    ` : ''}
                 `;
             }
 
@@ -1049,17 +1410,37 @@
 
     <!-- Display Fix Script -->
     <script src="/static/js/master_display_fix.js"></script>
+    <!-- Transparent Scoring Script -->
+    <script src="/static/js/transparent_display.js"></script>
     <script>
-        // Sobrescrever função de display existente
+        // Sobrescrever função de display existente para incluir transparent scoring
         const originalDisplayResults = window.displayResults;
         window.displayResults = function(data) {
+            console.log('🎯 Main displayResults called with data:', data);
+            
             // Chamar função original se existir
             if (typeof originalDisplayResults === 'function') {
                 originalDisplayResults.call(this, data);
             }
-            // Aplicar correções de display
-            updateMasterDisplay(data);
+            
+            // Aplicar correções de display existentes
+            if (typeof updateMasterDisplay === 'function') {
+                updateMasterDisplay(data);
+            }
+            
+            // NOVO: Aplicar transparent scoring
+            if (typeof displayTransparentScoring === 'function') {
+                console.log('🔄 Calling displayTransparentScoring directly');
+                displayTransparentScoring(data);
+            } else {
+                console.log('❌ displayTransparentScoring function not found');
+            }
         };
+        
+        // Also override the original function to ensure it's called
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DOM loaded, transparent scoring ready');
+        });
     </script>
 </body>
 </html>

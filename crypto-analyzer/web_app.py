@@ -19,7 +19,7 @@ if sys.platform.startswith('win'):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-from flask import Flask, render_template, jsonify, request, send_file
+from flask import Flask, render_template, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 
@@ -73,6 +73,32 @@ try:
     except Exception as e:
         print(f"[INIT] [WARNING] Formatting helper not available: {e}")
         formatter = None
+
+    # ============= NEW PHASE 2 SERVICES =============
+    try:
+        from trading_levels_service import TradingLevelsService
+        trading_levels_service = TradingLevelsService()
+        print("[INIT] [OK] Trading Levels service loaded")
+    except Exception as e:
+        print(f"[INIT] [WARNING] Trading Levels service not available: {e}")
+        trading_levels_service = None
+
+    try:
+        from technical_analysis_service import TechnicalAnalysisService
+        technical_analysis_service = TechnicalAnalysisService()
+        print("[INIT] [OK] Technical Analysis service loaded")
+    except Exception as e:
+        print(f"[INIT] [WARNING] Technical Analysis service not available: {e}")
+        technical_analysis_service = None
+
+    try:
+        from actionable_strategies_service import ActionableStrategiesService
+        actionable_strategies_service = ActionableStrategiesService()
+        print("[INIT] [OK] Actionable Strategies service loaded")
+    except Exception as e:
+        print(f"[INIT] [WARNING] Actionable Strategies service not available: {e}")
+        actionable_strategies_service = None
+    # ============= END PHASE 2 SERVICES =============
     # ============= END AI & WEB INTEGRATION =============
         HybridAIAgent = None
         
@@ -554,6 +580,11 @@ def master_analysis():
     """Master analysis web interface"""
     return render_template('master.html')
 
+@app.route('/test-transparent')
+def test_transparent():
+    """Test page for transparent scoring"""
+    return render_template('test_transparent.html')
+
 @app.route('/api/analyze/<token>')
 def api_analyze(token):
     """API endpoint for token analysis"""
@@ -962,14 +993,63 @@ def api_compare_ai():
         }), 500
 
 
+def get_historical_market_data(token_id, days=365):
+    """Fetch comprehensive historical market data from CoinGecko"""
+    import requests
+    
+    try:
+        # Try different endpoints for comprehensive data
+        endpoints = {
+            'prices': f"https://api.coingecko.com/api/v3/coins/{token_id}/market_chart",
+            'ohlc': f"https://api.coingecko.com/api/v3/coins/{token_id}/ohlc"
+        }
+        
+        market_data = {}
+        
+        # Get price and volume data
+        try:
+            response = requests.get(endpoints['prices'], params={
+                'vs_currency': 'usd',
+                'days': days,
+                'interval': 'daily' if days > 90 else 'hourly'
+            }, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                market_data.update(data)
+                print(f"[DATA] Successfully fetched {len(data.get('prices', []))} price points")
+        except Exception as e:
+            print(f"[DATA] Error fetching market chart: {e}")
+        
+        # Get OHLC data if available
+        try:
+            response = requests.get(endpoints['ohlc'], params={
+                'vs_currency': 'usd',
+                'days': min(days, 365)  # OHLC limited to 365 days
+            }, timeout=10)
+            
+            if response.status_code == 200:
+                ohlc_data = response.json()
+                market_data['ohlc'] = ohlc_data
+                print(f"[DATA] Successfully fetched {len(ohlc_data)} OHLC candles")
+        except Exception as e:
+            print(f"[DATA] Error fetching OHLC: {e}")
+        
+        return market_data if market_data else None
+        
+    except Exception as e:
+        print(f"[DATA] Error fetching historical data: {e}")
+        return None
+
 @app.route('/api/analyze/<token>/master')
 def api_analyze_master(token):
-    """Master analysis endpoint - VERSÃO CORRIGIDA E ROBUSTA"""
+    """Master analysis endpoint with REAL PHASE 2 IMPLEMENTATION"""
     from datetime import datetime
     import time
     global ai_insights_module, web_context_module, formatter
+    global trading_levels_service, technical_analysis_service, actionable_strategies_service
     
-    print(f"[MASTER] *** STARTING ANALYSIS FOR {token} ***")
+    print(f"[MASTER] *** STARTING PHASE 2 ANALYSIS FOR {token} ***")
     start_time = time.time()
     
     # Estrutura garantida
@@ -992,37 +1072,67 @@ def api_analyze_master(token):
     completed = 0
     total = 6
     
-    # Component 1: Fundamental (CRÍTICO)
+    # First, get token ID mapping for CoinGecko
+    token_id_mapping = {
+        'BTC': 'bitcoin',
+        'ETH': 'ethereum', 
+        'UNI': 'uniswap',
+        'ADA': 'cardano',
+        'SOL': 'solana',
+        'PEPE': 'pepe',
+        'ZRO': 'layerzero',
+        'DOGE': 'dogecoin',
+        'DOT': 'polkadot',
+        'LINK': 'chainlink'
+    }
+    
+    coingecko_id = token_id_mapping.get(token.upper(), token.lower())
+    
+    # Fetch historical market data
+    print(f"[MASTER] Fetching historical data for {coingecko_id}...")
+    market_data = get_historical_market_data(coingecko_id, days=365)
+    
+    # Component 1: Fundamental Analysis (using existing transparent scoring)
+    token_data = {}
     try:
-        if analyzer:
-            print(f"[MASTER] Processando fundamental para {token}...")
-            basic_data = analyzer.analyze(token)
+        print(f"[MASTER] Processing fundamental analysis for {token}...")
+        
+        # Import transparent scoring system
+        import sys
+        from pathlib import Path
+        sys.path.append(str(Path(__file__).parent / 'src'))
+        from transparent_scoring import TransparentScoring
+        
+        # Initialize transparent scoring
+        transparent_scorer = TransparentScoring()
+        
+        # Calculate comprehensive transparent score
+        scoring_result = transparent_scorer.calculate_comprehensive_score(coingecko_id)
+        
+        if not scoring_result.get('error'):
+            result['fundamental'] = {
+                'status': 'completed',
+                'transparent_scoring': scoring_result,
+                'score': scoring_result['final_score']['value'],
+                'percentage': scoring_result['final_score']['percentage'],
+                'grade': scoring_result['final_score']['grade'],
+                'classification': scoring_result['final_score']['classification'],
+                'decision': scoring_result['final_score']['classification'],
+                'token_data': scoring_result.get('token_data', {}),
+                'elimination_criteria': scoring_result.get('elimination_criteria', {}),
+                'scoring_categories': scoring_result.get('scoring_categories', {})
+            }
+            result['components']['fundamental'] = {'status': 'completed'}
+            completed += 1
             
-            if basic_data and not basic_data.get('error'):
-                result['fundamental'] = {
-                    'status': 'completed',
-                    'data': basic_data,
-                    'three_layers': basic_data,
-                    'score': basic_data.get('score', 0),
-                    'decision': basic_data.get('decision', 'HOLD'),
-                    'classification': basic_data.get('classification', 'Unknown')
-                }
-                result['components']['fundamental'] = {'status': 'completed'}
-                completed += 1
-            # Formatar dados para melhor legibilidade
-            if formatter:
-                formatted_data = formatter.format_fundamental(basic_data)
-                result['fundamental']['formatted'] = formatted_data
-
-                print(f"[MASTER] ✓ Fundamental completo")
-            else:
-                raise Exception(basic_data.get('error', 'Análise falhou'))
+            # Extract token data for other components
+            token_data = scoring_result.get('token_data', {})
+            print(f"[MASTER] ✓ Fundamental analysis complete: {scoring_result['final_score']['grade']} ({scoring_result['final_score']['percentage']}%)")
         else:
-            raise Exception('Analyzer não inicializado')
+            raise Exception(scoring_result.get('error', 'Fundamental analysis failed'))
             
     except Exception as e:
-        print(f"[MASTER] ✗ Fundamental erro: {e}")
-        # Dados de fallback
+        print(f"[MASTER] ✗ Fundamental analysis error: {e}")
         result['fundamental'] = {
             'status': 'error',
             'error': str(e),
@@ -1030,41 +1140,61 @@ def api_analyze_master(token):
         }
         result['components']['fundamental'] = {'status': 'error', 'error': str(e)}
     
-    # Component 2: Technical
+    # Component 2: REAL Technical Analysis using Phase 2 service
     try:
-        if technical_analyzer:
-            print(f"[MASTER] Processando technical...")
-            # Implementar análise técnica
+        if technical_analysis_service and market_data:
+            print(f"[MASTER] Processing REAL technical analysis...")
+            
+            # Use the technical analysis service with real market data
+            technical_result = technical_analysis_service.calculate_indicators(
+                token_data, market_data
+            )
+            
             result['technical'] = {
                 'status': 'completed',
-                'momentum': 'NEUTRAL',
-                'indicators': {'fear_greed': 50}
+                **technical_result
             }
             result['components']['technical'] = {'status': 'completed'}
             completed += 1
+            print(f"[MASTER] ✓ Technical analysis complete with {len(market_data.get('prices', []))} data points")
+            
+        elif technical_analysis_service:
+            print(f"[MASTER] Processing basic technical analysis...")
+            # Fallback to basic analysis without historical data
+            technical_result = technical_analysis_service.calculate_indicators(token_data)
+            
+            result['technical'] = {
+                'status': 'completed',
+                **technical_result
+            }
+            result['components']['technical'] = {'status': 'completed'}
+            completed += 1
+            print(f"[MASTER] ✓ Basic technical analysis complete")
+            
         else:
-            result['technical'] = {'status': 'unavailable'}
+            result['technical'] = {'status': 'unavailable', 'error': 'Technical analysis service not available'}
             result['components']['technical'] = {'status': 'disabled'}
             
     except Exception as e:
+        print(f"[MASTER] ✗ Technical analysis error: {e}")
+        result['technical'] = {'status': 'error', 'error': str(e)}
         result['components']['technical'] = {'status': 'error', 'error': str(e)}
     
-        # Component 3: AI Insights (com dados reais)
+    # Component 3: AI Insights (using existing system)
     try:
-        if ai_insights_module and 'fundamental' in result and result['fundamental'].get('data'):
-            print(f"[MASTER] Processing real AI insights for {token}...")
+        if ai_insights_module and result.get('fundamental', {}).get('token_data'):
+            print(f"[MASTER] Processing AI insights for {token}...")
             
-            # Usar dados reais do fundamental
-            real_data = result['fundamental'].get('data', {})
-            ai_result = ai_insights_module.analyze(real_data)
+            # Use fundamental data for AI insights
+            fundamental_data = result['fundamental'].get('token_data', {})
+            ai_result = ai_insights_module.analyze(fundamental_data)
             
-            # Formatar resultado se formatter disponível
             if formatter and ai_result.get('status') == 'completed':
                 result['ai_insights'] = {
                     'status': 'completed',
                     'summary': ai_result.get('summary', ''),
                     'confidence': ai_result.get('confidence', 0),
-                    'sentiment': ai_result.get('sentiment', 'NEUTRO'),
+                    'sentiment': ai_result.get('sentiment', 'NEUTRAL'),
                     'key_factors': ai_result.get('key_factors', []),
                     'risks': ai_result.get('risks', []),
                     'opportunities': ai_result.get('opportunities', []),
@@ -1077,11 +1207,11 @@ def api_analyze_master(token):
             
             if ai_result.get('status') == 'completed':
                 completed += 1
-                print(f"[MASTER] ✓ AI insights completed with real data")
+                print(f"[MASTER] ✓ AI insights completed")
         else:
             result['ai_insights'] = {
                 'status': 'unavailable',
-                'summary': 'Aguardando dados fundamentais'
+                'summary': 'AI insights service not available'
             }
             result['components']['ai_insights'] = {'status': 'disabled'}
             
@@ -1090,15 +1220,14 @@ def api_analyze_master(token):
         result['ai_insights'] = {'status': 'error', 'error': str(e)}
         result['components']['ai_insights'] = {'status': 'error', 'error': str(e)}
     
-    # Component 4: Web Context (dados reais da web)
+    # Component 4: Web Context (using existing system)
     try:
         if web_context_module:
-            print(f"[MASTER] Fetching real web context for {token}...")
+            print(f"[MASTER] Processing web context for {token}...")
             
-            # Buscar contexto real da web
             web_result = web_context_module.analyze(
                 token,
-                result.get('fundamental', {}).get('data', {})
+                result.get('fundamental', {}).get('token_data', {})
             )
             
             result['web_context'] = web_result
@@ -1106,11 +1235,11 @@ def api_analyze_master(token):
             
             if web_result.get('status') in ['completed', 'partial']:
                 completed += 1
-                print(f"[MASTER] ✓ Web context fetched from real sources")
+                print(f"[MASTER] ✓ Web context completed")
         else:
             result['web_context'] = {
                 'status': 'unavailable',
-                'summary': 'Módulo de contexto web não disponível'
+                'summary': 'Web context service not available'
             }
             result['components']['web_context'] = {'status': 'disabled'}
             
@@ -1119,33 +1248,70 @@ def api_analyze_master(token):
         result['web_context'] = {'status': 'error', 'error': str(e)}
         result['components']['web_context'] = {'status': 'error', 'error': str(e)}
     
-# Component 5: Trading Levels
+    # Component 5: REAL Trading Levels using Phase 2 service
     try:
-        current_price = result.get('fundamental', {}).get('data', {}).get('price', 100)
-        if current_price:
+        if trading_levels_service and token_data:
+            print(f"[MASTER] Processing REAL trading levels...")
+            
+            # Use the trading levels service with real token and market data
+            trading_result = trading_levels_service.calculate_trading_levels(
+                token_data, market_data
+            )
+            
             result['trading_levels'] = {
                 'status': 'completed',
-                'entry_points': [current_price * 0.95, current_price * 0.90],
-                'take_profit': [current_price * 1.10, current_price * 1.20],
-                'stop_loss': current_price * 0.85
+                **trading_result
             }
             result['components']['trading_levels'] = {'status': 'completed'}
             completed += 1
-    except:
-        result['components']['trading_levels'] = {'status': 'error'}
+            print(f"[MASTER] ✓ Trading levels calculated with real technical analysis")
+            
+        else:
+            result['trading_levels'] = {
+                'status': 'unavailable', 
+                'error': 'Trading levels service not available'
+            }
+            result['components']['trading_levels'] = {'status': 'disabled'}
+            
+    except Exception as e:
+        print(f"[MASTER] ✗ Trading levels error: {e}")
+        result['trading_levels'] = {'status': 'error', 'error': str(e)}
+        result['components']['trading_levels'] = {'status': 'error', 'error': str(e)}
     
-    # Component 6: Strategies
+    # Component 6: REAL Actionable Strategies using Phase 2 service
     try:
-        result['strategies'] = {
-            'status': 'completed',
-            'conservative': {'action': 'WAIT', 'position_size': '5%'},
-            'moderate': {'action': 'DCA', 'position_size': '10%'},
-            'aggressive': {'action': 'BUY', 'position_size': '15%'}
-        }
-        result['components']['strategies'] = {'status': 'completed'}
-        completed += 1
-    except:
-        result['components']['strategies'] = {'status': 'error'}
+        if actionable_strategies_service and token_data:
+            print(f"[MASTER] Processing REAL actionable strategies...")
+            
+            # Get master score from fundamental analysis
+            master_score = result.get('fundamental', {}).get('score', 5.0)
+            technical_analysis = result.get('technical', {})
+            trading_levels = result.get('trading_levels', {})
+            
+            # Generate personalized strategies
+            strategies_result = actionable_strategies_service.generate_strategies(
+                token_data, master_score, technical_analysis, trading_levels
+            )
+            
+            result['strategies'] = {
+                'status': 'completed',
+                **strategies_result
+            }
+            result['components']['strategies'] = {'status': 'completed'}
+            completed += 1
+            print(f"[MASTER] ✓ Actionable strategies generated with personalization")
+            
+        else:
+            result['strategies'] = {
+                'status': 'unavailable',
+                'error': 'Strategies service not available'
+            }
+            result['components']['strategies'] = {'status': 'disabled'}
+            
+    except Exception as e:
+        print(f"[MASTER] ✗ Strategies error: {e}")
+        result['strategies'] = {'status': 'error', 'error': str(e)}
+        result['components']['strategies'] = {'status': 'error', 'error': str(e)}
     
     # Finalizar
     result['completion_rate'] = round((completed / total) * 100, 1)
