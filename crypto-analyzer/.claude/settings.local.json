@@ -8,7 +8,22 @@
       "Bash(pip install:*)",
       "Bash(curl:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Read(/d:\\Users\\OneDrive\\Imagens\\Screenshots/**)",
+      "Bash(timeout 15 curl -s \"http://localhost:8000/api/analyze/BTC/master\")",
+      "Bash(echo:*)",
+      "Bash(pkill:*)",
+      "Bash(timeout 30 curl -s \"http://localhost:8000/api/analyze/bitcoin/master\")",
+      "Read(d:\\Users\\OneDrive\\Desktop/**)",
+      "Bash(touch:*)",
+      "Bash(timeout 30 curl -s \"http://localhost:8000/api/analyze/ZRO/master\")",
+      "Bash(/dev/null)",
+      "Bash(find:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c:*)",
+      "Bash(timeout 30 curl -s \"http://localhost:8000/api/analyze/BTC/master\")"
     ],
     "deny": [],
     "ask": []

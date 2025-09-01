@@ -1,0 +1,378 @@
+/* transparent_scoring.css - Estilos profissionais para sistema de scoring transparente */
+
+.transparent-scoring {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Header do Scoring */
+.scoring-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.scoring-header h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.final-score-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    border: 4px solid;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.score-circle.grade-a-plus,
+.score-circle.grade-a {
+    border-color: #27ae60;
+    box-shadow: 0 0 20px rgba(39, 174, 96, 0.3);
+}
+
+.score-circle.grade-b-plus,
+.score-circle.grade-b {
+    border-color: #2ecc71;
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
+}
+
+.score-circle.grade-c-plus,
+.score-circle.grade-c {
+    border-color: #f39c12;
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.3);
+}
+
+.score-circle.grade-d {
+    border-color: #e67e22;
+    box-shadow: 0 0 20px rgba(230, 126, 34, 0.3);
+}
+
+.score-circle.grade-f {
+    border-color: #e74c3c;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.3);
+}
+
+.score-value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #fff;
+}
+
+.score-percentage {
+    font-size: 0.9em;
+    color: #bbb;
+}
+
+.score-grade {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: inherit;
+}
+
+.score-classification {
+    text-align: center;
+}
+
+.score-classification h4 {
+    color: #fff;
+    margin: 0;
+    font-size: 1.3em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Critérios de Eliminação */
+.elimination-criteria {
+    margin-bottom: 30px;
+}
+
+.elimination-criteria h4 {
+    color: #fff;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+.criteria-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.criterion-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.criterion-item.passed {
+    background: rgba(39, 174, 96, 0.1);
+    border-left-color: #27ae60;
+}
+
+.criterion-item.failed {
+    background: rgba(231, 76, 60, 0.1);
+    border-left-color: #e74c3c;
+}
+
+.criterion-status {
+    font-size: 1.5em;
+    margin-right: 15px;
+}
+
+.criterion-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.criterion-label {
+    font-weight: bold;
+    color: #fff;
+    font-size: 0.95em;
+}
+
+.criterion-value {
+    color: #bbb;
+    font-size: 0.9em;
+}
+
+.criterion-threshold {
+    color: #888;
+    font-size: 0.8em;
+    font-style: italic;
+}
+
+/* Categories Scoring */
+.scoring-categories {
+    margin-bottom: 30px;
+}
+
+.scoring-categories h4 {
+    color: #fff;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+}
+
+.categories-container {
+    display: grid;
+    gap: 20px;
+}
+
+.category-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.category-name {
+    font-weight: bold;
+    color: #fff;
+    font-size: 1em;
+}
+
+.category-score {
+    font-weight: bold;
+    color: #3498db;
+    font-size: 1.1em;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    border-radius: 4px;
+    transition: width 0.8s ease;
+}
+
+.category-details {
+    margin-top: 10px;
+}
+
+.category-description {
+    color: #bbb;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+    font-style: italic;
+}
+
+.category-factors {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.category-factors li {
+    color: #ccc;
+    font-size: 0.85em;
+    padding: 2px 0;
+    padding-left: 15px;
+    position: relative;
+}
+
+.category-factors li:before {
+    content: "•";
+    color: #3498db;
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+/* Token Metrics */
+.token-metrics {
+    margin-top: 20px;
+}
+
+.token-metrics h4 {
+    color: #fff;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.metric-label {
+    color: #888;
+    font-size: 0.85em;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    color: #fff;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.metric-value.positive {
+    color: #27ae60;
+}
+
+.metric-value.negative {
+    color: #e74c3c;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .scoring-header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .final-score-display {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .score-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .score-value {
+        font-size: 1.5em;
+    }
+    
+    .criteria-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+    }
+}
+
+/* Animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.transparent-scoring > * {
+    animation: slideInUp 0.6s ease-out;
+}
+
+.transparent-scoring > *:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.transparent-scoring > *:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.transparent-scoring > *:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+/* Tooltips */
+.criterion-item:hover,
+.category-item:hover,
+.metric-item:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
+.score-circle:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
