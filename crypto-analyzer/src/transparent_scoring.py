@@ -153,6 +153,8 @@ class TransparentScoring:
         Returns:
             Dict com resultados dos critérios de eliminação
         """
+        print(f"[DEBUG-ELIMINATION] Starting check_elimination_criteria for token: {token_data.get('symbol', 'UNKNOWN')}")
+        print(f"[DEBUG-ELIMINATION] ELIMINATION_CRITERIA keys: {list(self.ELIMINATION_CRITERIA.keys())}")
         results = {}
         token_id = token_data.get('id', '').lower()
         
