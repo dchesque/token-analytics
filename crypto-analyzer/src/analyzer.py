@@ -1,7 +1,7 @@
 import time
 from fetcher import DataFetcher
 from social_analyzer import SocialAnalyzer
-from config import MIN_MARKET_CAP, MIN_VOLUME, MIN_AGE_DAYS, STRONG_BUY_SCORE, RESEARCH_SCORE
+from config import MIN_MARKET_CAP, MIN_VOLUME, STRONG_BUY_SCORE, RESEARCH_SCORE
 
 # AI Integration imports
 try:
@@ -161,8 +161,6 @@ class CryptoAnalyzer:
         if data['volume'] < MIN_VOLUME:
             reasons.append(f"Volume muito baixo: ${data['volume']:,.0f} < ${MIN_VOLUME:,.0f}")
         
-        if data['age_days'] < MIN_AGE_DAYS:
-            reasons.append(f"Token muito novo: {data['age_days']} dias < {MIN_AGE_DAYS} dias")
         
         if data['volume'] == 0 or data['market_cap'] == 0:
             reasons.append("Sem liquidez verificável")

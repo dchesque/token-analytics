@@ -259,7 +259,6 @@ class Config:
         # Basic thresholds
         self.MIN_MARKET_CAP = MIN_MARKET_CAP
         self.MIN_VOLUME = MIN_VOLUME
-        self.MIN_AGE_DAYS = MIN_AGE_DAYS
         self.STRONG_BUY_SCORE = STRONG_BUY_SCORE
         self.RESEARCH_SCORE = RESEARCH_SCORE
         
