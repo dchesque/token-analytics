@@ -1284,6 +1284,11 @@ def api_analyze_master(token):
                     'key_factors': ai_result.get('key_factors', []),
                     'risks': ai_result.get('risks', []),
                     'opportunities': ai_result.get('opportunities', []),
+                    'recommendation': ai_result.get('recommendation', 'NEUTRO'),
+                    'recent_events': ai_result.get('recent_events', []),
+                    'market_developments': ai_result.get('market_developments', []),
+                    'web_news': ai_result.get('web_news', []),
+                    'web_analysis': ai_result.get('web_analysis', []),
                     'metrics': ai_result.get('metrics', {}),
                     'model_used': ai_result.get('model_used', 'Enhanced AI Agent v2.0'),
                     'processing_time': ai_result.get('processing_time', 0)
