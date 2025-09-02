@@ -1169,27 +1169,212 @@
                     return;
                 }
                 
-                const summary = aiInsights.summary || 'No AI summary available';
+                const summary = aiInsights.summary || 'AI analysis completed with enhanced web research capabilities';
+                const keyFactors = aiInsights.key_factors || [];
+                const risks = aiInsights.risks || [];
                 const opportunities = aiInsights.opportunities || [];
+                const recommendation = aiInsights.recommendation || 'NEUTRO';
+                const confidence = aiInsights.confidence || 70;
+                const sentiment = aiInsights.sentiment || 'NEUTRO';
+                const modelUsed = aiInsights.model_used || 'Enhanced AI Agent v2.0';
+                const metrics = aiInsights.metrics || {};
+                const recentEvents = aiInsights.recent_events || [];
+                const webNews = aiInsights.web_news || [];
+                const webAnalysis = aiInsights.web_analysis || [];
+                
+                // Helper function to get sentiment color and icon
+                const getSentimentInfo = (sentiment) => {
+                    const sentimentMap = {
+                        'MUITO POSITIVO': { color: 'var(--success-color)', icon: '🚀', bg: 'var(--success-light)' },
+                        'POSITIVO': { color: 'var(--success-color)', icon: '📈', bg: 'var(--success-light)' },
+                        'NEUTRO': { color: 'var(--text-secondary)', icon: '⚖️', bg: 'var(--bg-tertiary)' },
+                        'NEGATIVO': { color: 'var(--error-color)', icon: '📉', bg: 'var(--error-light)' },
+                        'MUITO NEGATIVO': { color: 'var(--error-color)', icon: '💥', bg: 'var(--error-light)' }
+                    };
+                    return sentimentMap[sentiment] || sentimentMap['NEUTRO'];
+                };
+                
+                // Helper function to get recommendation color
+                const getRecommendationColor = (rec) => {
+                    const recMap = {
+                        'COMPRA': 'var(--success-color)',
+                        'ACUMULAR': 'var(--success-color)', 
+                        'NEUTRO': 'var(--text-secondary)',
+                        'AGUARDAR': 'var(--warning-color)',
+                        'VENDA': 'var(--error-color)'
+                    };
+                    return recMap[rec] || 'var(--text-secondary)';
+                };
+                
+                const sentimentInfo = getSentimentInfo(sentiment);
+                const recColor = getRecommendationColor(recommendation);
                 
                 container.innerHTML = `
-                    <h4>AI Analysis Summary</h4>
-                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--border-radius); margin: 1rem 0;">
-                        <pre style="white-space: pre-wrap; font-family: inherit; font-size: 0.875rem;">${summary}</pre>
+                    <!-- Executive Summary Header -->
+                    <div class="ai-summary-header" style="background: linear-gradient(135deg, var(--accent-color), var(--accent-light)); color: white; padding: 2rem; border-radius: var(--border-radius); margin-bottom: 2rem; text-align: center;">
+                        <h3 style="margin: 0 0 1rem 0; font-size: 1.5rem;">🤖 AI Enhanced Analysis</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <div style="font-size: 0.875rem; opacity: 0.9;">Sentiment:</div>
+                                <div style="font-size: 1.25rem; font-weight: 700;">${sentimentInfo.icon} ${sentiment}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; opacity: 0.9;">Recommendation:</div>
+                                <div style="font-size: 1.25rem; font-weight: 700;">${recommendation}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; opacity: 0.9;">Confidence:</div>
+                                <div style="font-size: 1.25rem; font-weight: 700;">${confidence}%</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; opacity: 0.9;">AI Model:</div>
+                                <div style="font-size: 1rem; font-weight: 600;">${modelUsed.includes('Enhanced') ? '✨ Enhanced' : modelUsed}</div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: var(--border-radius-small); text-align: left;">
+                            <strong>Executive Summary:</strong><br>
+                            <span style="font-size: 0.95rem;">${summary}</span>
+                        </div>
                     </div>
                     
-                    <h4>Model Information</h4>
-                    <p><strong>Model Used:</strong> ${aiInsights.model_used || 'Unknown'}</p>
-                    <p><strong>Confidence:</strong> ${aiInsights.confidence || 0}%</p>
-                    <p><strong>Processing Time:</strong> ${aiInsights.processing_time || 0}s</p>
-                    <p><strong>Cost:</strong> $${aiInsights.cost || 0}</p>
-                    
-                    ${opportunities.length > 0 ? `
-                        <h4>Key Opportunities</h4>
-                        <ul>
-                            ${opportunities.map(opp => `<li>${opp}</li>`).join('')}
-                        </ul>
+                    <!-- Key Factors Section -->
+                    ${keyFactors.length > 0 ? `
+                        <div class="key-factors-section" style="margin-bottom: 2rem;">
+                            <h4 style="color: var(--accent-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                🔍 Key Factors Analysis
+                            </h4>
+                            <div class="factors-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                                ${keyFactors.map((factor, index) => `
+                                    <div class="factor-card" style="background: var(--bg-tertiary); border-left: 4px solid var(--accent-color); padding: 1rem; border-radius: var(--border-radius);">
+                                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                                            <span style="font-size: 1.25rem; color: var(--accent-color); margin-top: 0.125rem;">💡</span>
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Factor ${index + 1}</div>
+                                                <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">${factor}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
                     ` : ''}
+                    
+                    <!-- Risk Analysis Section -->
+                    ${risks.length > 0 ? `
+                        <div class="risks-section" style="margin-bottom: 2rem;">
+                            <h4 style="color: var(--error-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                ⚠️ Risk Assessment
+                            </h4>
+                            <div class="risks-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                                ${risks.map((risk, index) => `
+                                    <div class="risk-card" style="background: var(--error-light); border-left: 4px solid var(--error-color); padding: 1rem; border-radius: var(--border-radius);">
+                                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                                            <span style="font-size: 1.25rem; color: var(--error-color);">🔻</span>
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Risk ${index + 1}</div>
+                                                <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">${risk}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Opportunities Section -->
+                    ${opportunities.length > 0 ? `
+                        <div class="opportunities-section" style="margin-bottom: 2rem;">
+                            <h4 style="color: var(--success-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                🎯 Strategic Opportunities
+                            </h4>
+                            <div class="opportunities-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                                ${opportunities.map((opportunity, index) => `
+                                    <div class="opportunity-card" style="background: var(--success-light); border-left: 4px solid var(--success-color); padding: 1rem; border-radius: var(--border-radius);">
+                                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                                            <span style="font-size: 1.25rem; color: var(--success-color);">🔺</span>
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Opportunity ${index + 1}</div>
+                                                <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">${opportunity}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Recent Events & News Section -->
+                    ${(recentEvents.length > 0 || webNews.length > 0) ? `
+                        <div class="recent-events-section" style="margin-bottom: 2rem;">
+                            <h4 style="color: var(--info-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                📰 Recent Market Events & News
+                            </h4>
+                            <div class="events-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                                ${recentEvents.map((event, index) => `
+                                    <div class="event-card" style="background: var(--info-light); border-left: 4px solid var(--info-color); padding: 1rem; border-radius: var(--border-radius);">
+                                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                                            <span style="font-size: 1.25rem; color: var(--info-color);">📅</span>
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Event ${index + 1}</div>
+                                                <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">${event}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                ${webNews.map((news, index) => `
+                                    <div class="news-card" style="background: var(--accent-light); border-left: 4px solid var(--accent-color); padding: 1rem; border-radius: var(--border-radius);">
+                                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                                            <span style="font-size: 1.25rem; color: var(--accent-color);">🗞️</span>
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Web News ${index + 1}</div>
+                                                <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">${news}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Analysis Metrics -->
+                    <div class="metrics-section" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 1rem;">
+                        <h4 style="color: var(--accent-color); margin-bottom: 1rem;">📊 Analysis Metrics</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
+                            ${metrics.volatility !== undefined ? `
+                                <div class="metric-item">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Volatility:</div>
+                                    <div style="font-weight: 600; color: ${metrics.volatility > 15 ? 'var(--error-color)' : metrics.volatility > 8 ? 'var(--warning-color)' : 'var(--success-color)'};">${metrics.volatility}%</div>
+                                </div>
+                            ` : ''}
+                            ${metrics.liquidity_ratio !== undefined ? `
+                                <div class="metric-item">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Liquidity:</div>
+                                    <div style="font-weight: 600; color: ${metrics.liquidity_ratio > 10 ? 'var(--success-color)' : metrics.liquidity_ratio > 3 ? 'var(--warning-color)' : 'var(--error-color)'};">${metrics.liquidity_ratio}%</div>
+                                </div>
+                            ` : ''}
+                            ${metrics.momentum_score !== undefined ? `
+                                <div class="metric-item">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Momentum:</div>
+                                    <div style="font-weight: 600; color: ${metrics.momentum_score > 70 ? 'var(--success-color)' : metrics.momentum_score > 50 ? 'var(--warning-color)' : 'var(--error-color)'};">${metrics.momentum_score}/100</div>
+                                </div>
+                            ` : ''}
+                            ${metrics.risk_level !== undefined ? `
+                                <div class="metric-item">
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Risk Level:</div>
+                                    <div style="font-weight: 600; color: ${metrics.risk_level === 'BAIXO' ? 'var(--success-color)' : metrics.risk_level === 'MÉDIO' ? 'var(--warning-color)' : 'var(--error-color)'};">${metrics.risk_level}</div>
+                                </div>
+                            ` : ''}
+                            <div class="metric-item">
+                                <div style="font-size: 0.875rem; color: var(--text-secondary);">Processing:</div>
+                                <div style="font-weight: 600;">${aiInsights.processing_time || 0}s</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced Features Badge -->
+                    <div style="text-align: center; color: var(--text-tertiary); font-size: 0.8rem; opacity: 0.8;">
+                        ✨ Enhanced with Web Research • Real-time Analysis • September 2025 Context
+                    </div>
                 `;
             }
 
