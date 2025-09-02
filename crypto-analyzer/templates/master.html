@@ -808,8 +808,8 @@
                         <h4>Classification: ${fundamental.classification}</h4>
                         <p><strong>Score:</strong> ${threeLayer.score}/10</p>
                         <p><strong>Decision:</strong> ${threeLayer.decision}</p>
-                        <p><strong>Market Cap:</strong> $${(threeLayer.market_cap || 0).toLocaleString()}</p>
-                        <p><strong>Current Price:</strong> $${threeLayer.price || 0}</p>
+                        <p><strong>Market Cap:</strong> ${SafeCurrencyFormatter.formatCompact(threeLayer.market_cap || 0)}</p>
+                        <p><strong>Current Price:</strong> ${SafeCurrencyFormatter.formatCurrency(threeLayer.price || 0)}</p>
                         
                         <h4>Strengths</h4>
                         <ul>
@@ -887,21 +887,21 @@
                                 <div class="ma-item" style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
                                     <strong>MA20:</strong> 
                                     <div>
-                                        <span style="color: var(--accent-color);">$${trend.moving_averages?.ma20?.value || 'N/A'}</span>
+                                        <span style="color: var(--accent-color);">${trend.moving_averages?.ma20?.value ? SafeCurrencyFormatter.formatCurrency(trend.moving_averages.ma20.value) : 'N/A'}</span>
                                         <span style="margin-left: 0.5rem; color: ${trend.moving_averages?.ma20?.position === 'ABOVE' ? 'var(--success-color)' : trend.moving_averages?.ma20?.position === 'BELOW' ? 'var(--error-color)' : 'var(--text-secondary)'};">${trend.moving_averages?.ma20?.position || ''}</span>
                                     </div>
                                 </div>
                                 <div class="ma-item" style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
                                     <strong>MA50:</strong> 
                                     <div>
-                                        <span style="color: var(--accent-color);">$${trend.moving_averages?.ma50?.value || 'N/A'}</span>
+                                        <span style="color: var(--accent-color);">${trend.moving_averages?.ma50?.value ? SafeCurrencyFormatter.formatCurrency(trend.moving_averages.ma50.value) : 'N/A'}</span>
                                         <span style="margin-left: 0.5rem; color: ${trend.moving_averages?.ma50?.position === 'ABOVE' ? 'var(--success-color)' : trend.moving_averages?.ma50?.position === 'BELOW' ? 'var(--error-color)' : 'var(--text-secondary)'};">${trend.moving_averages?.ma50?.position || ''}</span>
                                     </div>
                                 </div>
                                 <div class="ma-item" style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
                                     <strong>MA200:</strong> 
                                     <div>
-                                        <span style="color: var(--accent-color);">$${trend.moving_averages?.ma200?.value || 'N/A'}</span>
+                                        <span style="color: var(--accent-color);">${trend.moving_averages?.ma200?.value ? SafeCurrencyFormatter.formatCurrency(trend.moving_averages.ma200.value) : 'N/A'}</span>
                                         <span style="margin-left: 0.5rem; color: ${trend.moving_averages?.ma200?.position === 'ABOVE' ? 'var(--success-color)' : trend.moving_averages?.ma200?.position === 'BELOW' ? 'var(--error-color)' : 'var(--text-secondary)'};">${trend.moving_averages?.ma200?.position || ''}</span>
                                     </div>
                                 </div>
@@ -1008,7 +1008,7 @@
                     <div class="trading-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
                         <div class="context-card" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
                             <h5 style="color: var(--accent-color); margin-bottom: 0.5rem;">💰 Current Price</h5>
-                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">$${marketContext.current_price || 'N/A'}</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">${marketContext.current_price ? SafeCurrencyFormatter.formatCurrency(marketContext.current_price) : 'N/A'}</div>
                         </div>
                         <div class="context-card" style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
                             <h5 style="color: var(--accent-color); margin-bottom: 0.5rem;">📊 Volatility</h5>
@@ -1040,7 +1040,7 @@
                                     <tbody>
                                         ${entryPoints.map((entry, index) => `
                                             <tr style="border-bottom: 1px solid var(--border-color);">
-                                                <td style="padding: 0.75rem; font-weight: 600; color: var(--success-color);">$${entry.price}</td>
+                                                <td style="padding: 0.75rem; font-weight: 600; color: var(--success-color);">${SafeCurrencyFormatter.formatCurrency(entry.price)}</td>
                                                 <td style="padding: 0.75rem;">${entry.position_size}</td>
                                                 <td style="padding: 0.75rem;">
                                                     <span style="padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: white; background: ${entry.confidence === 'HIGH' ? 'var(--success-color)' : entry.confidence === 'MEDIUM' ? 'var(--warning-color)' : 'var(--error-color)'};">${entry.confidence}</span>
@@ -1071,7 +1071,7 @@
                                     <tbody>
                                         ${takeProfitTargets.map((target, index) => `
                                             <tr style="border-bottom: 1px solid var(--border-color);">
-                                                <td style="padding: 0.75rem; font-weight: 600; color: var(--warning-color);">$${target.price}</td>
+                                                <td style="padding: 0.75rem; font-weight: 600; color: var(--warning-color);">${SafeCurrencyFormatter.formatCurrency(target.price)}</td>
                                                 <td style="padding: 0.75rem; font-weight: 600; color: var(--success-color);">${target.percentage_gain}</td>
                                                 <td style="padding: 0.75rem;">
                                                     <span style="padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: white; background: ${parseFloat(target.probability) > 60 ? 'var(--success-color)' : parseFloat(target.probability) > 40 ? 'var(--warning-color)' : 'var(--error-color)'};">${target.probability}</span>
@@ -1095,7 +1095,7 @@
                                 <div style="margin-bottom: 1rem;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                                         <strong>Initial Stop Loss:</strong>
-                                        <span style="color: var(--error-color); font-weight: 600; font-size: 1.1rem;">$${stopLoss.initial?.price || 'N/A'}</span>
+                                        <span style="color: var(--error-color); font-weight: 600; font-size: 1.1rem;">${stopLoss.initial?.price ? SafeCurrencyFormatter.formatCurrency(stopLoss.initial.price) : 'N/A'}</span>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; align-items: center;">
                                         <span style="font-size: 0.875rem; color: var(--text-secondary);">Risk:</span>
@@ -1342,7 +1342,7 @@
                                     
                                     <div class="risk-info" style="background: var(--error-light); padding: 1rem; border-radius: var(--border-radius-small); border-left: 4px solid var(--error-color);">
                                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.875rem;">
-                                            <div><strong>Stop Loss:</strong> ${strategy.risk_management?.stop_loss ? '$' + strategy.risk_management.stop_loss : 'TBD'}</div>
+                                            <div><strong>Stop Loss:</strong> ${strategy.risk_management?.stop_loss ? SafeCurrencyFormatter.formatCurrency(strategy.risk_management.stop_loss) : 'TBD'}</div>
                                             <div><strong>Position Limit:</strong> ${strategy.risk_management?.position_limit || 'TBD'}</div>
                                         </div>
                                     </div>
