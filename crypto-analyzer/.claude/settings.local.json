@@ -36,7 +36,8 @@
       "Bash(timeout 5 curl -s \"http://localhost:8000/api/market/health\")",
       "Bash(timeout:*)",
       "Bash(set FLASK_DEBUG=1)",
-      "Bash(set DEBUG=true)"
+      "Bash(set DEBUG=true)",
+      "Read(d:\\Users\\OneDrive\\Desktop/**)"
     ],
     "deny": [],
     "ask": []
