@@ -1367,7 +1367,22 @@
 
             updateReportTab(formattedReport) {
                 const container = document.getElementById('formatted-report-content');
-                container.textContent = formattedReport || 'Formatted report not available';
+                if (formattedReport && formattedReport !== 'Formatted report not available') {
+                    // Formatar o texto como HTML preservando quebras de linha
+                    const htmlReport = formattedReport
+                        .replace(/\n/g, '<br>')
+                        .replace(/={3,}/g, '<hr>')
+                        .replace(/^([A-Z\s]+)$/gm, '<h3>$1</h3>')
+                        .replace(/^-{3,}$/gm, '<hr class="section-divider">');
+                    
+                    container.innerHTML = `
+                        <div class="formatted-report">
+                            <pre class="report-content">${htmlReport}</pre>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<p class="no-data">Full report generation in progress...</p>';
+                }
             }
 
             switchTab(tabName) {

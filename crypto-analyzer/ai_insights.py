@@ -93,10 +93,43 @@ class AIInsights:
             return 'BAIXO'
     
     def _calculate_confidence(self, data: Dict) -> float:
-        """Calcula confiança baseada na qualidade dos dados"""
+        """Calcula confiança baseada na completude e qualidade dos dados"""
         required_fields = ['price', 'volume', 'market_cap', 'price_change_24h']
-        available = sum(1 for field in required_fields if data.get(field) is not None)
-        return (available / len(required_fields)) * 100
+        available = sum(1 for field in required_fields if data.get(field) is not None and data.get(field) != 0)
+        
+        # Base confidence on data completeness
+        data_completeness = available / len(required_fields)
+        
+        # Calculate confidence based on completeness
+        if data_completeness > 0.9:
+            base_confidence = 85
+        elif data_completeness > 0.7:
+            base_confidence = 70
+        elif data_completeness > 0.5:
+            base_confidence = 50
+        else:
+            base_confidence = 30
+        
+        # Adjust for market cap rank (more established tokens = higher confidence)
+        market_cap_rank = data.get('market_cap_rank', 999)
+        if market_cap_rank <= 10:
+            confidence_bonus = 10
+        elif market_cap_rank <= 50:
+            confidence_bonus = 5
+        elif market_cap_rank <= 100:
+            confidence_bonus = 2
+        else:
+            confidence_bonus = 0
+        
+        # Adjust for data age and quality
+        if data.get('genesis_date'):  # Has historical data
+            confidence_bonus += 5
+        
+        if data.get('community_score', 0) > 0:  # Has community data
+            confidence_bonus += 3
+        
+        final_confidence = min(95, base_confidence + confidence_bonus)
+        return final_confidence
     
     def _determine_sentiment(self, price_change: float, momentum: float) -> str:
         """Determina sentimento baseado em dados reais"""
