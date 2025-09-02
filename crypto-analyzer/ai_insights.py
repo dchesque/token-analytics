@@ -503,29 +503,52 @@ Format as JSON with fields: summary, key_factors, risks, opportunities, recommen
         return f"{symbol} está em {trend} ({change:+.1f}%) com momentum {momentum:.0f}/100. Liquidez: {liquidity:.1f}% do market cap. Risco: {risk}. {web_context}".strip()
     
     def _extract_enhanced_key_factors(self, context: Dict, sentiment: str) -> List[str]:
-        """Extrai fatores-chave enriquecidos"""
+        """Extrai fatores-chave enriquecidos com análise específica por token"""
         factors = []
+        symbol = context.get('token_symbol', 'UNKNOWN')
         
-        # Fatores baseados em ranking
-        if context['market_cap_rank'] <= 10:
-            factors.append(f"Top {context['market_cap_rank']} - Criptomoeda estabelecida")
-        elif context['market_cap_rank'] <= 100:
-            factors.append(f"Rank #{context['market_cap_rank']} - Projeto consolidado")
+        # Análise específica para tokens conhecidos
+        if symbol == 'BTC':
+            factors.extend([
+                "Primeira criptomoeda - máxima adoção institucional",
+                "Reserve asset digital com escassez programada (21M supply)",
+                "Rede mais segura e descentralizada do mercado",
+                "Correlação crescente com ativos tradicionais como hedge inflacionário"
+            ])
+        elif symbol == 'ETH':
+            factors.extend([
+                "Plataforma líder para smart contracts e DeFi",
+                "Transição para Proof-of-Stake reduz consumo energético 99%",
+                "Ecossistema mais ativo de developers e aplicações",
+                "Base para majority dos NFTs e tokens do mercado"
+            ])
+        else:
+            # Fatores baseados em ranking para outros tokens
+            if context['market_cap_rank'] <= 10:
+                factors.append(f"Top {context['market_cap_rank']} - Criptomoeda estabelecida globalmente")
+            elif context['market_cap_rank'] <= 50:
+                factors.append(f"Rank #{context['market_cap_rank']} - Projeto consolidado no mercado")
+            elif context['market_cap_rank'] <= 100:
+                factors.append(f"Rank #{context['market_cap_rank']} - Altcoin com potencial de crescimento")
         
-        # Fatores baseados em performance
-        if context['price_change_7d'] > 10:
-            factors.append(f"Forte valorização semanal: +{context['price_change_7d']:.1f}%")
+        # Fatores baseados em performance (para todos)
+        if context['price_change_7d'] > 15:
+            factors.append(f"Momentum excepcional: +{context['price_change_7d']:.1f}% em 7 dias")
+        elif context['price_change_7d'] > 5:
+            factors.append(f"Performance positiva consistente: +{context['price_change_7d']:.1f}% semanal")
         
-        # Fatores baseados em volume
+        # Fatores baseados em volume e liquidez
         volume_ratio = (context['volume'] / context['market_cap'] * 100) if context['market_cap'] > 0 else 0
         if volume_ratio > 20:
-            factors.append("Volume institucional - alta liquidez")
+            factors.append("Liquidez institucional excepcional - ideal para grandes posições")
+        elif volume_ratio > 5:
+            factors.append("Boa liquidez para entrada e saída eficientes")
         
         # Fatores baseados em web sentiment
         if sentiment == 'POSITIVO':
-            factors.append("Sentimento web positivo - interesse crescente")
+            factors.append("Narrativa de mercado favorável - interesse crescente")
         
-        return factors[:4]  # Máximo 4 fatores
+        return factors[:4]  # Máximo 4 fatores mais relevantes
     
     def _identify_enhanced_risks(self, context: Dict, risk_level: str) -> List[str]:
         """Identifica riscos enriquecidos"""
@@ -544,23 +567,52 @@ Format as JSON with fields: summary, key_factors, risks, opportunities, recommen
         return risks[:3]
     
     def _identify_enhanced_opportunities(self, context: Dict, momentum: float, sentiment: str) -> List[str]:
-        """Identifica oportunidades enriquecidas"""
+        """Identifica oportunidades enriquecidas com análise específica"""
         opportunities = []
+        symbol = context.get('token_symbol', 'UNKNOWN')
         
-        if momentum > 60 and context['price_change_7d'] > 5:
-            opportunities.append("Tendência de alta consistente - momentum positivo")
+        # Oportunidades específicas por token
+        if symbol == 'BTC':
+            opportunities.extend([
+                "Approval iminente de Bitcoin ETFs spot pode acelerar adoção institucional",
+                "Halving em 2024 reduzirá emissão pela metade - historicamente bullish",
+                "Adoção crescente como reserva de valor por países e corporations",
+                "Lightning Network expandindo casos de uso para pagamentos rápidos"
+            ])
+        elif symbol == 'ETH':
+            opportunities.extend([
+                "Ethereum 2.0 staking oferece yield nativo de ~4-6% anual",
+                "EIP-1559 torna ETH deflaciozária durante alta atividade de rede", 
+                "Layer 2 solutions reduzem custos mantendo segurança da mainnet",
+                "Crescimento do DeFi e NFTs aumenta demanda por ETH como gas"
+            ])
+        else:
+            # Oportunidades genéricas baseadas em dados
+            if momentum > 70 and context['price_change_7d'] > 10:
+                opportunities.append("Momentum excepcional sugere possível breakout continuation")
+            elif momentum > 60 and context['price_change_7d'] > 5:
+                opportunities.append("Tendência de alta consistente com momentum sustentável")
+            
+            if context['market_cap_rank'] <= 20:
+                opportunities.append("Top 20 token com menor risco regulatório e maior legitimidade")
+            elif context['market_cap_rank'] <= 100:
+                opportunities.append("Posição consolidada no mercado com potencial de appreciation")
         
-        if context['market_cap_rank'] <= 50:
-            opportunities.append("Projeto estabelecido com menor risco de rugpull")
-        
+        # Oportunidades baseadas em métricas (para todos)
         volume_ratio = (context['volume'] / context['market_cap'] * 100) if context['market_cap'] > 0 else 0
-        if volume_ratio > 10:
-            opportunities.append("Excelente liquidez para entrada/saída")
+        if volume_ratio > 15:
+            opportunities.append("Liquidez institucional permite accumulation sem impact significativo")
+        elif volume_ratio > 5:
+            opportunities.append("Liquidez adequada para strategies de médio/longo prazo")
         
         if sentiment == 'POSITIVO':
-            opportunities.append("Sentimento de mercado favorável")
+            opportunities.append("Narrative momentum positiva pode atrair capital especulativo")
         
-        return opportunities[:3]
+        # Para Bitcoin, sempre incluir oportunidade macro
+        if symbol == 'BTC' and context['market_cap_rank'] == 1:
+            opportunities.append("Ambiente macro com alta liquidez global favorece risk assets")
+        
+        return opportunities[:3]  # Top 3 oportunidades mais relevantes
     
     def _generate_enhanced_recommendation(self, context: Dict, momentum: float, risk_level: str) -> str:
         """Gera recomendação enriquecida"""
@@ -587,21 +639,33 @@ Format as JSON with fields: summary, key_factors, risks, opportunities, recommen
         return min(95, base_confidence)
     
     def _run_advanced_rule_based_analysis(self, token_data: Dict) -> Dict:
-        """Análise avançada sem APIs web - versão melhorada da original"""
+        """Análise avançada sem APIs web - usa enhanced quando possível"""
         
-        # Usar as funções originais melhoradas
+        try:
+            # Tentar usar enhanced analysis primeiro
+            enhanced_context = self._prepare_enhanced_context(token_data, {'news': [], 'analysis': [], 'sentiment': 'NEUTRAL'})
+            enhanced_result = self._generate_enhanced_rule_based_analysis(enhanced_context)
+            
+            # Verificar se o resultado enhanced é válido
+            if enhanced_result and enhanced_result.get('summary') and enhanced_result.get('key_factors'):
+                return enhanced_result
+        
+        except Exception as e:
+            print(f"[AI_INSIGHTS] Enhanced analysis failed, using fallback: {e}")
+        
+        # Fallback para análise original se enhanced falhar
         price = token_data.get('current_price', token_data.get('price', 0))
         volume = token_data.get('volume_24h', token_data.get('volume', 0))
         market_cap = token_data.get('market_cap', 0)
         price_change_24h = token_data.get('price_change_24h', 0)
         
-        # Análises avançadas
+        # Análises básicas
         volatility = abs(price_change_24h) if price_change_24h else 0
         liquidity_ratio = (volume / market_cap * 100) if market_cap > 0 else 0
         momentum_score = self._calculate_momentum(price_change_24h)
         risk_level = self._calculate_risk(volatility, liquidity_ratio)
         
-        # Gerar resumo avançado
+        # Gerar resumo básico
         summary = self._generate_summary(
             token_data.get('symbol', 'TOKEN'),
             price, 
