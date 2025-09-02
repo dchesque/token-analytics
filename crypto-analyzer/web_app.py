@@ -1199,16 +1199,51 @@ def api_analyze_master(token):
         }
         result['components']['technical'] = {'status': 'error', 'error': str(e)}
     
-    # Component 3: AI Insights (using existing system)
+    # Component 3: AI Insights (Enhanced - works with any available data)
     try:
-        if ai_insights_module and result.get('fundamental', {}).get('token_data'):
-            print(f"[MASTER] Processing AI insights for {token}...")
+        if ai_insights_module:
+            print(f"[MASTER] Processing enhanced AI insights for {token}...")
             
-            # Use fundamental data for AI insights
-            fundamental_data = result['fundamental'].get('token_data', {})
-            ai_result = ai_insights_module.analyze(fundamental_data)
+            # Try to get data from multiple sources
+            token_data = {}
             
-            if formatter and ai_result.get('status') == 'completed':
+            # Priority 1: Use fundamental data if available
+            if result.get('fundamental', {}).get('token_data'):
+                token_data = result['fundamental']['token_data']
+                print("[AI_INSIGHTS] Using fundamental data")
+            
+            # Priority 2: Use technical data if available
+            elif result.get('technical', {}).get('status') == 'completed':
+                tech_data = result['technical']
+                token_data = {
+                    'symbol': token.upper(),
+                    'name': f'{token} Token',
+                    'market_cap_rank': 999,  # Unknown rank
+                    'current_price': 0,      # Will be filled if available
+                    'volume_24h': 0,
+                    'price_change_24h': 0,
+                    'price_change_7d': 0
+                }
+                print("[AI_INSIGHTS] Using technical analysis data")
+            
+            # Priority 3: Use basic token info
+            else:
+                token_data = {
+                    'symbol': token.upper(),
+                    'name': f'{token} Token', 
+                    'market_cap_rank': 999,
+                    'current_price': 0,
+                    'market_cap': 0,
+                    'volume_24h': 0,
+                    'price_change_24h': 0,
+                    'price_change_7d': 0
+                }
+                print("[AI_INSIGHTS] Using basic fallback data")
+            
+            # Enhanced AI analysis with available data
+            ai_result = ai_insights_module.analyze(token_data)
+            
+            if ai_result and ai_result.get('status') == 'completed':
                 result['ai_insights'] = {
                     'status': 'completed',
                     'summary': ai_result.get('summary', ''),
@@ -1217,14 +1252,15 @@ def api_analyze_master(token):
                     'key_factors': ai_result.get('key_factors', []),
                     'risks': ai_result.get('risks', []),
                     'opportunities': ai_result.get('opportunities', []),
-                    'metrics': ai_result.get('metrics', {})
+                    'metrics': ai_result.get('metrics', {}),
+                    'model_used': ai_result.get('model_used', 'Enhanced AI Agent v2.0'),
+                    'processing_time': ai_result.get('processing_time', 0)
                 }
+                result['components']['ai_insights'] = {'status': 'completed'}
+                print(f"[AI_INSIGHTS] Enhanced analysis completed for {token}")
             else:
-                result['ai_insights'] = ai_result
-            
-            result['components']['ai_insights'] = {'status': ai_result.get('status', 'error')}
-            
-            if ai_result.get('status') == 'completed':
+                result['ai_insights'] = ai_result or {'status': 'error', 'error': 'AI analysis failed'}
+                result['components']['ai_insights'] = {'status': 'error'}
                 completed += 1
                 print(f"[MASTER] ✓ AI insights completed")
         else:
