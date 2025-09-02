@@ -25,10 +25,6 @@ class TransparentScoring:
             'threshold': 100_000,  # $100k volume diário mínimo
             'description': 'Volume mínimo para garantir liquidez básica'
         },
-        'token_age': {
-            'threshold': 180,  # 180 dias mínimo
-            'description': 'Idade mínima para evitar projetos muito novos'
-        },
         'liquidity': {
             'threshold': 0.01,  # 1% ratio volume/market_cap mínimo
             'description': 'Liquidez mínima baseada na relação volume/market cap'
@@ -146,25 +142,6 @@ class TransparentScoring:
             print(f"Error fetching token data: {e}")
             return {}
     
-    def calculate_token_age_days(self, genesis_date: str) -> int:
-        """
-        Calcula a idade do token em dias
-        
-        Args:
-            genesis_date: Data de criação do token
-            
-        Returns:
-            Idade em dias
-        """
-        if not genesis_date:
-            return 0
-            
-        try:
-            genesis = datetime.fromisoformat(genesis_date.replace('Z', '+00:00'))
-            now = datetime.now(genesis.tzinfo)
-            return (now - genesis).days
-        except:
-            return 0
     
     def check_elimination_criteria(self, token_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -197,28 +174,7 @@ class TransparentScoring:
             'reason': f"Volume 24h: ${volume_24h:,.0f}" if volume_24h > 0 else "Volume 24h não disponível"
         }
         
-        # 3. Token Age - tratamento especial para major coins
-        token_age = self.calculate_token_age_days(token_data.get('genesis_date'))
-        if token_age == 0:
-            token_age = token_data.get('age_days', 0)  # Use override se disponível
-        
-        if token_id in ['bitcoin', 'ethereum']:
-            # Major coins sempre passam eliminação
-            results['token_age'] = {
-                'threshold': self.ELIMINATION_CRITERIA['token_age']['threshold'],
-                'value': token_age,
-                'passed': True,
-                'reason': 'Established major cryptocurrency'
-            }
-        else:
-            results['token_age'] = {
-                'threshold': self.ELIMINATION_CRITERIA['token_age']['threshold'],
-                'value': token_age,
-                'passed': token_age >= self.ELIMINATION_CRITERIA['token_age']['threshold'],
-                'reason': f"Idade: {token_age} dias" if token_age > 0 else "Data de criação não disponível"
-            }
-        
-        # 4. Liquidity (volume/market_cap ratio)
+        # 3. Liquidity (volume/market_cap ratio)
         liquidity_ratio = volume_24h / market_cap if market_cap > 0 else 0
         results['liquidity'] = {
             'threshold': self.ELIMINATION_CRITERIA['liquidity']['threshold'],

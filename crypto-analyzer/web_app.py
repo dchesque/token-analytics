@@ -1242,7 +1242,6 @@ def api_analyze_master(token):
                         'volume_24h': 28500000000,
                         'price_change_24h': 0.9,
                         'price_change_7d': -2.1,
-                        'genesis_date': '2009-01-03'
                     },
                     'ETH': {
                         'symbol': 'ETH', 

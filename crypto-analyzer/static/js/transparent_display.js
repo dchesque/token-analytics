@@ -161,7 +161,6 @@ function getCriterionLabel(key) {
     const labels = {
         'market_cap': 'Market Cap',
         'volume_24h': 'Volume 24h',
-        'token_age': 'Idade do Token',
         'liquidity': 'Liquidez'
     };
     return labels[key] || key;
@@ -183,8 +182,6 @@ function formatThreshold(key, threshold) {
         case 'market_cap':
         case 'volume_24h':
             return `$${formatNumber(threshold)}`;
-        case 'token_age':
-            return `${threshold} dias`;
         case 'liquidity':
             return `${(threshold * 100).toFixed(2)}%`;
         default:

@@ -100,7 +100,6 @@ class DisplayManager:
             content += "[green]Critérios Atendidos:[/green]\n"
             content += f"  • Market Cap: ${self._format_number(market_cap)} [green]✓[/green] (mín: $1M)\n"
             content += f"  • Volume 24h: ${self._format_number(volume)} [green]✓[/green] (mín: $100K)\n"
-            content += f"  • Idade: {age_days:,} dias [green]✓[/green] (mín: 180 dias)\n"
             content += f"  • Liquidez: {liquidity_ratio:.2f}% do MCap [green]✓[/green] (mín: 0.1%)\n"
             
             # Adicionar informações extras se disponíveis
