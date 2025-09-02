@@ -646,6 +646,11 @@
             }
 
             displayMasterResults(data) {
+                console.log('Displaying master results with data:', data);
+                console.log('Fundamental data:', data.fundamental);
+                console.log('Score value:', data.fundamental?.score);
+                console.log('Classification value:', data.fundamental?.classification);
+                
                 // Hide loading, show results
                 document.getElementById('master-analysis-loading').style.display = 'none';
                 document.getElementById('master-results-content').style.display = 'block';
@@ -688,10 +693,10 @@
 
             updateOverviewCards(data) {
                 const container = document.getElementById('master-overview');
-                const score = data.fundamental?.three_layers?.score || 0;
+                const score = data.fundamental?.score || data.fundamental?.three_layers?.score || 0;
                 const completionRate = data.completion_rate || 0;
                 const processingTime = data.processing_time || 0;
-                const classification = data.fundamental?.classification || 'Unknown';
+                const classification = data.fundamental?.classification || data.fundamental?.decision || 'Unknown';
                 
                 // Add status indicators for health
                 const healthClass = completionRate >= 80 ? 'success' : completionRate >= 50 ? 'warning' : 'error';
@@ -699,7 +704,7 @@
                 
                 container.innerHTML = `
                     <div class="overview-card">
-                        <span class="overview-value">${score}/10</span>
+                        <span class="overview-value">${score ? score.toFixed(1) : '0'}/10</span>
                         <span class="overview-label">Overall Score</span>
                     </div>
                     <div class="overview-card">
@@ -707,11 +712,11 @@
                         <span class="overview-label">Classification</span>
                     </div>
                     <div class="overview-card">
-                        <span class="overview-value ${healthClass}">${completionRate}%</span>
+                        <span class="overview-value ${healthClass}">${completionRate ? completionRate.toFixed(1) : '0'}%</span>
                         <span class="overview-label">Completion Rate</span>
                     </div>
                     <div class="overview-card">
-                        <span class="overview-value">${processingTime}s</span>
+                        <span class="overview-value">${processingTime ? processingTime.toFixed(2) : '0'}s</span>
                         <span class="overview-label">Processing Time</span>
                     </div>
                     <div class="overview-card">

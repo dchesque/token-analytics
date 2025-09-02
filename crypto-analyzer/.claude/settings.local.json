@@ -23,7 +23,8 @@
       "Bash(netstat:*)",
       "Bash(taskkill:*)",
       "Bash(cmd /c:*)",
-      "Bash(timeout 30 curl -s \"http://localhost:8000/api/analyze/BTC/master\")"
+      "Bash(timeout 30 curl -s \"http://localhost:8000/api/analyze/BTC/master\")",
+      "Read(d:\\Users\\OneDrive\\Desktop/**)"
     ],
     "deny": [],
     "ask": []
