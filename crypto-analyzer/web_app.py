@@ -8,6 +8,7 @@ Supports both Web UI and API endpoints for EasyPanel deployment
 import os
 import sys
 import json
+import logging
 import threading
 import time
 from datetime import datetime
@@ -98,6 +99,15 @@ try:
     except Exception as e:
         print(f"[INIT] [WARNING] Actionable Strategies service not available: {e}")
         actionable_strategies_service = None
+    
+    # ============= MARKET INTEGRATION SERVICES =============
+    try:
+        from services.market_agg import market_aggregator
+        print("[INIT] [OK] Market Aggregation service loaded")
+    except Exception as e:
+        print(f"[INIT] [WARNING] Market Aggregation service not available: {e}")
+        market_aggregator = None
+    # ============= END MARKET INTEGRATION SERVICES =============
     # ============= END PHASE 2 SERVICES =============
     # ============= END AI & WEB INTEGRATION =============
         HybridAIAgent = None
@@ -147,6 +157,11 @@ def test():
 cache = {}
 cache_lock = threading.Lock()
 CACHE_DURATION = int(os.environ.get('CACHE_DURATION', 300))  # 5 minutes
+
+# Market data cache
+market_cache = {}
+market_cache_lock = threading.Lock()
+MARKET_CACHE_DURATION = int(os.environ.get('MARKET_CACHE_DURATION', 30))  # 30 seconds
 
 # PRIORIDADE 1: Inicialização de Componentes
 def initialize_all_components():
@@ -518,6 +533,22 @@ def cache_result(token, result):
     """Cache analysis result"""
     with cache_lock:
         cache[token] = (result, time.time())
+
+def get_cached_market_result(cache_key):
+    """Get cached market result if available and not expired"""
+    with market_cache_lock:
+        if cache_key in market_cache:
+            result, timestamp = market_cache[cache_key]
+            if time.time() - timestamp < MARKET_CACHE_DURATION:
+                return result
+            else:
+                del market_cache[cache_key]
+    return None
+
+def cache_market_result(cache_key, result):
+    """Cache market data result"""
+    with market_cache_lock:
+        market_cache[cache_key] = (result, time.time())
 
 def analyze_token_internal(token_name):
     """Internal function to analyze a token"""
@@ -1642,6 +1673,399 @@ def debug_trading_levels(token):
             'error': str(e),
             'traceback': traceback.format_exc()
         }), 500
+
+# ============= NEW MARKET ROUTES =============
+
+@app.route('/api/token/<chain>/<tokenAddress>/pools')
+def api_token_pools(chain, tokenAddress):
+    """Get pools for a specific token on a chain"""
+    try:
+        if not market_aggregator:
+            return jsonify({
+                'success': False,
+                'error': 'Market aggregation service not available'
+            }), 503
+        
+        # Check cache first
+        cache_key = f"pools:{chain}:{tokenAddress}"
+        cached_result = get_cached_market_result(cache_key)
+        if cached_result:
+            logger.info(f"Returning cached pools data for {tokenAddress} on {chain}")
+            return jsonify(cached_result)
+        
+        # Get token pools
+        pools_data = market_aggregator.get_token_pools_snapshot(chain, tokenAddress)
+        
+        if not pools_data:
+            return jsonify({
+                'success': False,
+                'error': f'No pools found for token {tokenAddress} on {chain}'
+            }), 404
+        
+        result = {
+            'success': True,
+            'chain': chain,
+            'token_address': tokenAddress,
+            'data': pools_data,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Cache the result
+        cache_market_result(cache_key, result)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error fetching token pools: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/ohlcv/<network>/<pool>')
+def api_pool_ohlcv(network, pool):
+    """Get OHLCV data for a specific pool"""
+    try:
+        if not market_aggregator:
+            return jsonify({
+                'success': False,
+                'error': 'Market aggregation service not available'
+            }), 503
+        
+        # Get query parameters
+        timeframe = request.args.get('timeframe', '5m')
+        aggregate = int(request.args.get('aggregate', 1))
+        limit = int(request.args.get('limit', 100))
+        
+        # Check cache first (OHLCV data changes frequently, shorter cache)
+        cache_key = f"ohlcv:{network}:{pool}:{timeframe}:{aggregate}:{limit}"
+        cached_result = get_cached_market_result(cache_key)
+        if cached_result:
+            logger.info(f"Returning cached OHLCV data for {pool}")
+            return jsonify(cached_result)
+        
+        # Validate parameters
+        supported_timeframes = market_aggregator.get_supported_timeframes()
+        if timeframe not in supported_timeframes:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid timeframe. Supported: {supported_timeframes}'
+            }), 400
+        
+        if aggregate < 1 or aggregate > 10:
+            return jsonify({
+                'success': False,
+                'error': 'Aggregate must be between 1 and 10'
+            }), 400
+        
+        if limit < 1 or limit > 1000:
+            return jsonify({
+                'success': False,
+                'error': 'Limit must be between 1 and 1000'
+            }), 400
+        
+        # Get OHLCV data
+        candles = market_aggregator.get_pool_ohlcv(network, pool, timeframe, aggregate, limit)
+        
+        if not candles:
+            return jsonify({
+                'success': False,
+                'error': f'No OHLCV data available for pool {pool} on {network}'
+            }), 404
+        
+        result = {
+            'success': True,
+            'network': network,
+            'pool': pool,
+            'timeframe': timeframe,
+            'aggregate': aggregate,
+            'candles_count': len(candles),
+            'data': candles,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Cache the result
+        cache_market_result(cache_key, result)
+        
+        return jsonify(result)
+        
+    except ValueError as e:
+        return jsonify({
+            'success': False,
+            'error': f'Invalid parameter: {e}'
+        }), 400
+    except Exception as e:
+        logger.error(f"Error fetching OHLCV data: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/subgraph/uniswap', methods=['POST'])
+def api_uniswap_subgraph():
+    """Secure proxy for whitelisted Uniswap Subgraph queries"""
+    try:
+        if not market_aggregator:
+            return jsonify({
+                'success': False,
+                'error': 'Market aggregation service not available'
+            }), 503
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'JSON data required'
+            }), 400
+        
+        query_type = data.get('query_type')
+        params = data.get('params', {})
+        
+        # Whitelist of allowed query types
+        allowed_queries = [
+            'pool_by_id',
+            'pools_by_tokens', 
+            'pool_metrics',
+            'recent_swaps',
+            'top_pools'
+        ]
+        
+        if query_type not in allowed_queries:
+            return jsonify({
+                'success': False,
+                'error': f'Query type not allowed. Allowed: {allowed_queries}'
+            }), 403
+        
+        # Route to appropriate subgraph method
+        subgraph = market_aggregator.uniswap_subgraph
+        result = None
+        
+        if query_type == 'pool_by_id':
+            pool_id = params.get('pool_id')
+            if not pool_id:
+                return jsonify({'success': False, 'error': 'pool_id required'}), 400
+            result = subgraph.get_pool_by_id(pool_id)
+            
+        elif query_type == 'pools_by_tokens':
+            token0 = params.get('token0')
+            if not token0:
+                return jsonify({'success': False, 'error': 'token0 required'}), 400
+            token1 = params.get('token1')
+            limit = params.get('limit', 10)
+            result = subgraph.get_pools_by_tokens(token0, token1, limit)
+            
+        elif query_type == 'pool_metrics':
+            pool_id = params.get('pool_id')
+            from_timestamp = params.get('from_timestamp')
+            to_timestamp = params.get('to_timestamp')
+            bucket = params.get('bucket', 'DAY')
+            
+            if not all([pool_id, from_timestamp, to_timestamp]):
+                return jsonify({
+                    'success': False, 
+                    'error': 'pool_id, from_timestamp, to_timestamp required'
+                }), 400
+            
+            result = subgraph.get_pool_metrics(pool_id, from_timestamp, to_timestamp, bucket)
+            
+        elif query_type == 'recent_swaps':
+            pool_id = params.get('pool_id')
+            limit = params.get('limit', 100)
+            if not pool_id:
+                return jsonify({'success': False, 'error': 'pool_id required'}), 400
+            result = subgraph.get_recent_swaps(pool_id, limit)
+            
+        elif query_type == 'top_pools':
+            limit = params.get('limit', 20)
+            result = subgraph.get_top_pools(limit)
+        
+        if result is None:
+            return jsonify({
+                'success': False,
+                'error': 'No data returned from subgraph'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'query_type': query_type,
+            'data': result,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in subgraph proxy: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/market/search')
+def api_market_search():
+    """Search for token pools across all DEXs"""
+    try:
+        if not market_aggregator:
+            return jsonify({
+                'success': False,
+                'error': 'Market aggregation service not available'
+            }), 503
+        
+        query = request.args.get('q')
+        if not query:
+            return jsonify({
+                'success': False,
+                'error': 'Query parameter "q" required'
+            }), 400
+        
+        # Search for token pools
+        search_results = market_aggregator.search_token_pools(query)
+        
+        if not search_results:
+            return jsonify({
+                'success': False,
+                'error': f'No pools found for query: {query}'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'query': query,
+            'data': search_results,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in market search: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/market/overview/<token_symbol>')
+def api_market_overview(token_symbol):
+    """Get multi-chain overview for a token"""
+    try:
+        if not market_aggregator:
+            return jsonify({
+                'success': False,
+                'error': 'Market aggregation service not available'
+            }), 503
+        
+        # Get multi-chain overview
+        overview = market_aggregator.get_multi_chain_overview(token_symbol)
+        
+        if not overview:
+            return jsonify({
+                'success': False,
+                'error': f'No overview data found for token: {token_symbol}'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'token_symbol': token_symbol,
+            'data': overview,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in market overview: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/market/health')
+def api_market_health():
+    """Check health of all market data services"""
+    try:
+        if not market_aggregator:
+            return jsonify({
+                'success': False,
+                'error': 'Market aggregation service not available'
+            }), 503
+        
+        health_status = market_aggregator.health_check()
+        
+        # Determine overall health
+        all_healthy = all(
+            service['status'] == 'healthy' 
+            for service in health_status['services'].values()
+        )
+        
+        return jsonify({
+            'success': True,
+            'overall_status': 'healthy' if all_healthy else 'degraded',
+            'data': health_status,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in market health check: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/cache/stats')
+def api_cache_stats():
+    """Get cache statistics"""
+    try:
+        with cache_lock:
+            analysis_cache_size = len(cache)
+        
+        with market_cache_lock:
+            market_cache_size = len(market_cache)
+        
+        return jsonify({
+            'success': True,
+            'cache_stats': {
+                'analysis_cache': {
+                    'size': analysis_cache_size,
+                    'duration_seconds': CACHE_DURATION
+                },
+                'market_cache': {
+                    'size': market_cache_size,
+                    'duration_seconds': MARKET_CACHE_DURATION
+                }
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/cache/clear', methods=['POST'])
+def api_cache_clear():
+    """Clear cache (for debugging/admin purposes)"""
+    try:
+        cache_type = request.json.get('type', 'all') if request.is_json else 'all'
+        
+        cleared = {'analysis': 0, 'market': 0}
+        
+        if cache_type in ['all', 'analysis']:
+            with cache_lock:
+                cleared['analysis'] = len(cache)
+                cache.clear()
+        
+        if cache_type in ['all', 'market']:
+            with market_cache_lock:
+                cleared['market'] = len(market_cache)
+                market_cache.clear()
+        
+        return jsonify({
+            'success': True,
+            'cleared': cleared,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ============= END NEW MARKET ROUTES =============
 
 @app.errorhandler(404)
 def not_found(error):

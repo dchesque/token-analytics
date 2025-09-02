@@ -368,6 +368,11 @@
                             <!-- Overview cards will be populated here -->
                         </div>
 
+                        <!-- Candlestick Chart -->
+                        <div id="candlestick-chart-container">
+                            <!-- Chart will be initialized here -->
+                        </div>
+
                         <!-- Tab Navigation -->
                         <div class="master-tabs">
                             <button class="tab-button active" data-tab="overview">Overview</button>
@@ -680,6 +685,9 @@
 
                 // Update overview cards
                 this.updateOverviewCards(data);
+                
+                // Initialize and load candlestick chart
+                this.initializeChart();
                 
                 // Update tab contents
                 this.updateFundamentalTab(data.fundamental);
@@ -1605,6 +1613,66 @@
                 document.getElementById('master-error-state').style.display = 'block';
                 document.getElementById('master-error-message').textContent = message;
             }
+            
+            initializeChart() {
+                console.log('Initializing candlestick chart for token:', this.currentToken);
+                
+                try {
+                    // Initialize chart if not already created
+                    if (!this.candlestickChart) {
+                        this.candlestickChart = new CandlestickChart('candlestick-chart-container');
+                    }
+                    
+                    // Load chart for current token
+                    if (this.currentToken) {
+                        // Try to resolve token address from symbol
+                        this.loadTokenChart(this.currentToken);
+                    }
+                } catch (error) {
+                    console.error('Error initializing chart:', error);
+                    // Chart initialization failed, but don't break the rest of the analysis
+                    const container = document.getElementById('candlestick-chart-container');
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="padding: 20px; text-align: center; color: #666;">
+                                <i class="fas fa-chart-line" style="font-size: 2em; margin-bottom: 10px;"></i>
+                                <p>Chart temporarily unavailable</p>
+                            </div>
+                        `;
+                    }
+                }
+            }
+            
+            async loadTokenChart(tokenSymbol) {
+                try {
+                    console.log(`Loading chart for token: ${tokenSymbol}`);
+                    
+                    // Resolve token address from symbol
+                    const tokenAddress = await this.candlestickChart.resolveTokenAddress(tokenSymbol);
+                    console.log(`Resolved ${tokenSymbol} to address: ${tokenAddress}`);
+                    
+                    // Load chart with resolved address
+                    await this.candlestickChart.loadTokenChart(tokenAddress, 'ethereum');
+                    
+                    // Start auto-refresh (refresh every 30 seconds)
+                    this.candlestickChart.startAutoRefresh(30);
+                    
+                } catch (error) {
+                    console.error('Error loading token chart:', error);
+                    
+                    // Show error in chart container
+                    const container = document.getElementById('candlestick-chart-container');
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="padding: 20px; text-align: center; color: #666; background: #f8f9fa; border-radius: 8px; margin: 10px 0;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 1.5em; margin-bottom: 10px; color: #ffc107;"></i>
+                                <p><strong>Chart data not available</strong></p>
+                                <p style="font-size: 0.9em; color: #999;">No trading pools found for ${tokenSymbol}</p>
+                            </div>
+                        `;
+                    }
+                }
+            }
         }
 
         // Initialize the app when DOM is loaded
@@ -1619,6 +1687,14 @@
     <script src="/static/js/master_display_fix.js"></script>
     <!-- Transparent Scoring Script -->
     <script src="/static/js/transparent_display.js"></script>
+    
+    <!-- Chart.js for candlestick charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <!-- Candlestick Chart Component -->
+    <script src="/static/js/candlestick_chart.js"></script>
+    
     <script>
         // Sobrescrever função de display existente para incluir transparent scoring
         const originalDisplayResults = window.displayResults;
