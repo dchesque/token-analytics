@@ -25,7 +25,18 @@
       "Bash(cmd /c:*)",
       "Bash(timeout 30 curl -s \"http://localhost:8000/api/analyze/BTC/master\")",
       "Read(d:\\Users\\OneDrive\\Desktop/**)",
-      "Read(d:\\Users\\OneDrive\\Desktop/**)"
+      "Read(d:\\Users\\OneDrive\\Desktop/**)",
+      "Read(d:\\Users\\OneDrive\\Desktop/**)",
+      "Read(d:\\Users\\OneDrive\\Desktop/**)",
+      "Read(d:\\Users\\OneDrive\\Desktop/**)",
+      "Bash(timeout 10 curl -s \"http://localhost:8000/api/analyze/BTC/master\")",
+      "Bash(timeout 10 curl -s \"http://localhost:8000/api/cache/stats\")",
+      "Bash(timeout 10 curl -s \"http://localhost:8000/api/market/health\")",
+      "Bash(timeout 10 curl -s \"http://localhost:8000/master\")",
+      "Bash(timeout 5 curl -s \"http://localhost:8000/api/market/health\")",
+      "Bash(timeout:*)",
+      "Bash(set FLASK_DEBUG=1)",
+      "Bash(set DEBUG=true)"
     ],
     "deny": [],
     "ask": []

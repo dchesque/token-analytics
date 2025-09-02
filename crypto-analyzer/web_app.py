@@ -99,15 +99,6 @@ try:
     except Exception as e:
         print(f"[INIT] [WARNING] Actionable Strategies service not available: {e}")
         actionable_strategies_service = None
-    
-    # ============= MARKET INTEGRATION SERVICES =============
-    try:
-        from services.market_agg import market_aggregator
-        print("[INIT] [OK] Market Aggregation service loaded")
-    except Exception as e:
-        print(f"[INIT] [WARNING] Market Aggregation service not available: {e}")
-        market_aggregator = None
-    # ============= END MARKET INTEGRATION SERVICES =============
     # ============= END PHASE 2 SERVICES =============
     # ============= END AI & WEB INTEGRATION =============
         HybridAIAgent = None
@@ -122,14 +113,18 @@ except ImportError as e:
 load_dotenv()
 
 # Initialize Flask app
+template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 app = Flask(__name__, 
-           template_folder='templates',
-           static_folder='static')
+           template_folder=template_path,
+           static_folder=static_path)
 CORS(app)
 
 # Configure Flask for production
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
 app.config['JSON_SORT_KEYS'] = False
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.jinja_env.auto_reload = True
 
 # Handle proxy headers for EasyPanel deployment
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -163,10 +158,21 @@ market_cache = {}
 market_cache_lock = threading.Lock()
 MARKET_CACHE_DURATION = int(os.environ.get('MARKET_CACHE_DURATION', 30))  # 30 seconds
 
+# Global component variables (initialized in initialize_all_components)
+analyzer = None
+technical_analyzer = None
+ai_agent = None
+hybrid_ai_agent = None
+fetcher = None
+social_analyzer = None
+display_manager = None
+enhanced_analyzer = None
+market_aggregator = None
+
 # PRIORIDADE 1: Inicialização de Componentes
 def initialize_all_components():
     """Inicializa todos os componentes com fallback seguro"""
-    global analyzer, technical_analyzer, ai_agent, hybrid_ai_agent, fetcher, social_analyzer, display_manager, enhanced_analyzer
+    global analyzer, technical_analyzer, ai_agent, hybrid_ai_agent, fetcher, social_analyzer, display_manager, enhanced_analyzer, market_aggregator
     
     print("🔧 Iniciando inicialização prioritária de componentes...")
     
@@ -273,14 +279,25 @@ def initialize_all_components():
     else:
         enhanced_analyzer = technical_analyzer  # Referenciar o que já funcionou
     
+    # 9. Market Aggregator (para integração DEX/OHLCV)
+    market_aggregator = None
+    try:
+        print("Inicializando Market Aggregator...")
+        from src.services.market_agg import market_aggregator as market_agg_service
+        market_aggregator = market_agg_service
+        print("✓ Market Aggregator inicializado")
+    except Exception as e:
+        market_aggregator = None
+        print(f"- Market Aggregator não disponível: {e}")
+    
     # Verificar status mínimo necessário
     critical_components = [analyzer, fetcher]
     critical_loaded = all(comp is not None for comp in critical_components)
     
     if critical_loaded:
         print("🎉 Componentes críticos carregados com sucesso!")
-        component_count = sum(1 for comp in [analyzer, fetcher, technical_analyzer, ai_agent, hybrid_ai_agent, social_analyzer, display_manager, enhanced_analyzer] if comp is not None)
-        print(f"📊 Total de componentes ativos: {component_count}/8")
+        component_count = sum(1 for comp in [analyzer, fetcher, technical_analyzer, ai_agent, hybrid_ai_agent, social_analyzer, display_manager, enhanced_analyzer, market_aggregator] if comp is not None)
+        print(f"📊 Total de componentes ativos: {component_count}/9")
         return True
     else:
         print("💥 ERRO CRÍTICO: Componentes essenciais não puderam ser inicializados!")
@@ -679,6 +696,11 @@ def api_compare():
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/debug-before-status')
+def debug_before_status():
+    """Test endpoint before /api/status"""
+    return jsonify({'location': 'before_status', 'working': True})
 
 @app.route('/api/status')
 def api_status():
@@ -2066,6 +2088,16 @@ def api_cache_clear():
         }), 500
 
 # ============= END NEW MARKET ROUTES =============
+
+@app.route('/api/test-market')
+def test_market_endpoint():
+    """Test endpoint to verify market routes are working"""
+    return jsonify({
+        'success': True,
+        'message': 'Market routes test endpoint working',
+        'market_aggregator_available': market_aggregator is not None,
+        'timestamp': datetime.now().isoformat()
+    })
 
 @app.errorhandler(404)
 def not_found(error):

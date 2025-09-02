@@ -1,0 +1,97 @@
+Hybrid AI Agent enabled successfully
+[AI_INSIGHTS] Enhanced AI Agent initialized
+[AI_INSIGHTS] APIs available: OpenRouter:True, Tavily:True, Serper:True, Brave:True
+[INIT] [OK] AI Insights module loaded
+[INIT] [OK] Web Context module loaded
+[INIT] [OK] Formatting helper loaded
+[INIT] [OK] Trading Levels service loaded
+[INIT] [OK] Technical Analysis service loaded
+[INIT] [OK] Actionable Strategies service loaded
+🔧 Iniciando inicialização prioritária de componentes...
+Inicializando CryptoAnalyzer...
+✓ CryptoAnalyzer inicializado
+Inicializando DataFetcher...
+✓ DataFetcher inicializado
+Inicializando análise técnica...
+✓ Technical analyzer inicializado
+Inicializando AI Agent...
+✓ AI agent inicializado
+Inicializando Hybrid AI...
+✓ Hybrid AI inicializado
+Inicializando SocialAnalyzer...
+✓ SocialAnalyzer inicializado
+Inicializando DisplayManager...
+✓ DisplayManager inicializado
+🎉 Componentes críticos carregados com sucesso!
+📊 Total de componentes ativos: 8/8
+
+=== REGISTERED FLASK ROUTES ===
+  /static/<path:filename> [OPTIONS, HEAD, GET] -> static
+  /test [OPTIONS, HEAD, GET] -> test
+  / [OPTIONS, HEAD, GET] -> index
+  /master [OPTIONS, HEAD, GET] -> master_analysis
+  /test-transparent [OPTIONS, HEAD, GET] -> test_transparent
+  /api/analyze/<token> [OPTIONS, HEAD, GET] -> api_analyze
+  /api/analyze [OPTIONS, POST] -> api_analyze_post
+  /api/compare [OPTIONS, POST] -> api_compare
+  /api/status [OPTIONS, HEAD, GET] -> api_status
+  /health [OPTIONS, HEAD, GET] -> health
+  /ping [OPTIONS, HEAD, GET] -> ping
+  /api/history [OPTIONS, HEAD, GET] -> api_history
+  /api/report/<token> [OPTIONS, HEAD, GET] -> api_report
+  /api/analyze/<token>/ai/<analysis_type> [OPTIONS, HEAD, GET] -> api_analyze_ai
+  /api/analyze/<token>/ai [OPTIONS, HEAD, GET] -> api_analyze_ai
+  /api/ai/models [OPTIONS, HEAD, GET] -> api_ai_models
+  /api/ai/usage/<int:days> [OPTIONS, HEAD, GET] -> api_ai_usage
+  /api/ai/usage [OPTIONS, HEAD, GET] -> api_ai_usage
+  /api/ai/health [OPTIONS, HEAD, GET] -> api_ai_health
+  /api/compare-ai [OPTIONS, POST] -> api_compare_ai
+  /api/analyze/<token>/master [OPTIONS, HEAD, GET] -> api_analyze_master
+  /api/analyze/<token>/basic [OPTIONS, HEAD, GET] -> api_analyze_basic
+  /api/analyze/<token>/master-emergency [OPTIONS, HEAD, GET] -> api_analyze_master_emergency
+  /api/analyze/<token>/master-safe [OPTIONS, HEAD, GET] -> api_analyze_master_safe
+  /api/debug/trading-levels/<token> [OPTIONS, HEAD, GET] -> debug_trading_levels
+=== END ROUTES ===
+
+
+=== REGISTERED FLASK ROUTES ===
+  /static/<path:filename> [OPTIONS, HEAD, GET] -> static
+  /test [OPTIONS, HEAD, GET] -> test
+  / [OPTIONS, HEAD, GET] -> index
+  /master [OPTIONS, HEAD, GET] -> master_analysis
+  /test-transparent [OPTIONS, HEAD, GET] -> test_transparent
+  /api/analyze/<token> [OPTIONS, HEAD, GET] -> api_analyze
+  /api/analyze [OPTIONS, POST] -> api_analyze_post
+  /api/compare [OPTIONS, POST] -> api_compare
+  /api/status [OPTIONS, HEAD, GET] -> api_status
+  /health [OPTIONS, HEAD, GET] -> health
+  /ping [OPTIONS, HEAD, GET] -> ping
+  /api/history [OPTIONS, HEAD, GET] -> api_history
+  /api/report/<token> [OPTIONS, HEAD, GET] -> api_report
+  /api/analyze/<token>/ai/<analysis_type> [OPTIONS, HEAD, GET] -> api_analyze_ai
+  /api/analyze/<token>/ai [OPTIONS, HEAD, GET] -> api_analyze_ai
+  /api/ai/models [OPTIONS, HEAD, GET] -> api_ai_models
+  /api/ai/usage/<int:days> [OPTIONS, HEAD, GET] -> api_ai_usage
+  /api/ai/usage [OPTIONS, HEAD, GET] -> api_ai_usage
+  /api/ai/health [OPTIONS, HEAD, GET] -> api_ai_health
+  /api/compare-ai [OPTIONS, POST] -> api_compare_ai
+  /api/analyze/<token>/master [OPTIONS, HEAD, GET] -> api_analyze_master
+  /api/analyze/<token>/basic [OPTIONS, HEAD, GET] -> api_analyze_basic
+  /api/analyze/<token>/master-emergency [OPTIONS, HEAD, GET] -> api_analyze_master_emergency
+  /api/analyze/<token>/master-safe [OPTIONS, HEAD, GET] -> api_analyze_master_safe
+  /api/debug/trading-levels/<token> [OPTIONS, HEAD, GET] -> debug_trading_levels
+=== END ROUTES ===
+
+Starting AI Token Preview Web Server
+Components Loaded: True
+AI Integration Available: True
+Server: http://0.0.0.0:8000
+Debug Mode: False
+Cache Duration: 10s
+ * Serving Flask app 'web_app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.1.18:8000
+Press CTRL+C to quit
